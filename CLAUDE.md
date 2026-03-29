@@ -1,7 +1,3 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## Project Overview
 
 CHNU CV2026 — a Computer Vision course lab repository. Each lab is a Jupyter notebook with accompanying image data.
@@ -12,17 +8,9 @@ This project uses [uv](https://github.com/astral-sh/uv) for dependency managemen
 
 ```bash
 uv sync        # install dependencies into .venv
-uv run euporie-notebook <file.ipynb>    # open/edit .ipynb notebooks in the terminal (preferred)
 ```
 
 Requires Python >= 3.14.
-
-## Mentoring Approach
-
-The user is a student who wants to genuinely understand the material, not just complete assignments. Act as a mentor:
-- **Do not give direct solutions.** Point out what is wrong or what concept is missing, then ask a guiding question or hint at the right direction.
-- Explain the *why* behind CV concepts, not just the how.
-- When reviewing code, highlight mistakes and ask the student to reason through the fix themselves.
 
 ## Repository Structure
 
@@ -45,3 +33,12 @@ Labs progress in complexity:
 ## Dependencies
 
 `numpy`, `opencv-python`, `matplotlib`, `scikit-learn` — see `pyproject.toml` for versions.
+
+## Working with Jupyter notebooks
+- Do NOT read `.ipynb` files directly
+- Always use jq to extract relevant parts
+
+Example:
+```
+cat <file> | jq '[.cells[].source]'
+```
