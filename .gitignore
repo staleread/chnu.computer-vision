@@ -1,0 +1,4 @@
+homework_files/
+*.quarto_*
+homework.html
+.jupyter_cache
