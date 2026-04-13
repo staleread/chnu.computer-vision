@@ -10,3 +10,11 @@ dependencies = [
     "opencv-python>=4.13.0.92",
     "scikit-learn>=1.8.0",
 ]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.2.0",
+    "nbclient>=0.10.4",
+    "nbformat>=5.10.4",
+    "pyyaml>=6.0.3",
+]
