@@ -10,7 +10,7 @@ with app.setup:
     import numpy as np
     import matplotlib.pyplot as plt
     import random
-    from time import perf_counter_ns
+    from time import perf_counter
     from typing import NamedTuple
 
     # Some useful types
@@ -132,15 +132,15 @@ def _(detector, random_color):
             print(f'[DLIB] scaled the image from {w_old}x{h_old} to {w_new}x{h_new}')
 
         # Detect faces (upsampling = 1)
-        start_ns = perf_counter_ns()
+        start = perf_counter()
         rects = detector(result, 1)
-        end_ns = perf_counter_ns()
+        end = perf_counter()
 
-        elapsed_time = round((end_ns - start_ns) / 1e9, 3)
-    
+        elapsed_time = end - start
+
         print('[DLIB] Number of detected faces:', len(rects), 'Elapsed time (s)', elapsed_time)
 
-        # Draw rectangles
+        # Draw rectangles around faces
         for rect in rects:
             cv.rectangle(
                 result,
@@ -388,6 +388,157 @@ def _():
     - **0.5 scale**: Moderate compression — acceptable for many uses (34% loss, 4x faster)
     - **0.4 scale**: Severe precision degradation (91.5% loss) despite 6.3x speed gain
     """)
+    return
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ## Viola-Jones face detection
+    """)
+    return
+
+
+@app.cell
+def _():
+    face_cascade = cv.CascadeClassifier('data/haarcascade_frontalface_default.xml')
+    return (face_cascade,)
+
+
+@app.cell
+def _(face_cascade, random_color):
+    def show_detected_faces_vj(
+        img: Image,
+        *,
+        ax,
+        thickness: int = 2,
+        color: Color | None = None,
+        gray: bool = False,
+        scale: float = 1.0,
+    ):
+        # Work on a copy for visualization
+        result = np.copy(img.gray if gray else img.rgb)
+
+        # Resize the image if needed
+        if scale != 1.0:
+            h_old, w_old = result.shape[:2]
+            result = cv.resize(result, (0, 0), fx=scale, fy=scale)
+            h_new, w_new = result.shape[:2]
+
+            print(f'[VJ] scaled the image from {w_old}x{h_old} to {w_new}x{h_new}')
+
+        start = perf_counter()
+        faces = face_cascade.detectMultiScale(result,
+                                             scaleFactor=1.1,
+                                             minNeighbors=10,
+                                             flags=cv.CASCADE_SCALE_IMAGE)
+        end = perf_counter()
+        elapsed_time = end - start
+
+        print('[VJ] Number of detected faces:', len(faces), 'Elapsed time (s)', elapsed_time)
+
+        # Draw rectangles around faces
+        for (x, y, w, h) in faces: 
+            cv.rectangle(result, (x, y), (x+w, y+h), color or random_color(), thickness)
+
+        ax.imshow(result, cmap="gray" if gray else None)
+        ax.axis('off')
+
+    return (show_detected_faces_vj,)
+
+
+@app.cell
+def _(images: list[Image], show_detected_faces_vj):
+    _fig, _axes = plt.subplots(1, 3, figsize=(12, 9))
+
+    show_detected_faces_vj(images[0], ax=_axes[0], thickness=20)
+    show_detected_faces_vj(images[1], ax=_axes[1], thickness=10)
+    show_detected_faces_vj(images[2], ax=_axes[2], thickness=10)
+
+    plt.show()
+    return
+
+
+@app.cell
+def _(images: list[Image], show_detected_faces_vj):
+    _fig, _axes = plt.subplots(1, 3, figsize=(12, 9))
+
+    show_detected_faces_vj(images[0], ax=_axes[0], thickness=20, gray=True)
+    show_detected_faces_vj(images[1], ax=_axes[1], thickness=10, gray=True)
+    show_detected_faces_vj(images[2], ax=_axes[2], thickness=10, gray=True)
+
+    plt.show()
+    return
+
+
+@app.cell
+def _(images: list[Image], show_detected_faces_vj):
+    _fig, _axes = plt.subplots(1, 3, figsize=(12, 9))
+    _scale = 0.05
+
+    show_detected_faces_vj(images[0], ax=_axes[0], thickness=1, scale=0.03)
+    show_detected_faces_vj(images[1], ax=_axes[1], thickness=1, scale=0.095)
+    show_detected_faces_vj(images[2], ax=_axes[2], thickness=2, scale=0.158)
+
+    plt.show()
+    return
+
+
+@app.cell
+def _(images: list[Image], show_detected_faces_vj):
+    _fig, _axes = plt.subplots(1, 3, figsize=(12, 9))
+    _scale = 0.05
+
+    show_detected_faces_vj(images[0], ax=_axes[0], thickness=1, scale=0.03, gray=True)
+    show_detected_faces_vj(images[1], ax=_axes[1], thickness=1, scale=0.095, gray=True)
+    show_detected_faces_vj(images[2], ax=_axes[2], thickness=2, scale=0.158, gray=True)
+
+    plt.show()
+    return
+
+
+@app.cell
+def _(images: list[Image], show_detected_faces_vj):
+    _fig, _axes = plt.subplots(1, 2, figsize=(12, 9))
+
+    show_detected_faces_vj(images[5], ax=_axes[0], thickness=12)
+    show_detected_faces_vj(images[7], ax=_axes[1], thickness=10)
+
+    plt.show()
+    return
+
+
+@app.cell
+def _(images: list[Image], show_detected_faces_vj):
+    _fig, _axes = plt.subplots(1, 2, figsize=(12, 9))
+
+    show_detected_faces_vj(images[5], ax=_axes[0], thickness=12, gray=True)
+    show_detected_faces_vj(images[7], ax=_axes[1], thickness=10, gray=True)
+
+    plt.show()
+    return
+
+
+@app.cell
+def _(images: list[Image], show_detected_faces_vj):
+    _fig, _axes = plt.subplots(1, 2, figsize=(12, 9))
+
+    show_detected_faces_vj(images[5], ax=_axes[0], thickness=12, scale=0.5)
+    show_detected_faces_vj(images[5], ax=_axes[1], thickness=2, scale=0.1)
+
+    plt.show()
+    return
+
+
+@app.cell
+def _(images: list[Image], show_detected_faces_vj):
+    _fig, _axes = plt.subplots(1, 3, figsize=(12, 9))
+
+    show_detected_faces_vj(images[7], ax=_axes[0], thickness=12, scale=0.7)
+    show_detected_faces_vj(images[7], ax=_axes[1], thickness=12, scale=0.5)
+    show_detected_faces_vj(images[7], ax=_axes[2], thickness=2, scale=0.4)
+
+    plt.show()
     return
 
 
