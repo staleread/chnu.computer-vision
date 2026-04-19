@@ -179,18 +179,12 @@ def _(images: list[Image], show_detected_faces_dlib):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ```
-    [DLIB] Number of detected faces: 1 Elapsed time (s) 1.3623237540014088
-    [DLIB] Number of detected faces: 1 Elapsed time (s) 0.45125001600172254
-    [DLIB] Number of detected faces: 1 Elapsed time (s) 0.6959608489996754
-    [DLIB] Number of detected faces: 1 Elapsed time (s) 0.33291933899818105
-    ```
-
-    | Image | Distance | Image size | Processing time (s) |
-    |---|---|---|----|
-    | 1 | Selfie |  1808x3216 | 1.348 |
-    | 1 | Portrait |  1200x1600 | 0.447 |
-    | 1 | ~2 meters |  1741x1741 | 0.694 |
+    | Method | Image | Faces | Image size | Time (s) |
+    |---|---|---|---|---|
+    | dlib | 0 | 1 | 1808x3216 | 1.362 |
+    | dlib | 1 | 1 | 1200x1600 | 0.451 |
+    | dlib | 2 | 1 | 1741x1741 | 0.696 |
+    | dlib | 3 | 1 | 901x1600 | 0.333 |
 
     And in gray mode:
     """)
@@ -214,22 +208,16 @@ def _(images: list[Image], show_detected_faces_dlib):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ```
-    [DLIB] Number of detected faces: 1 Elapsed time (s) 0.8925083799986169
-    [DLIB] Number of detected faces: 1 Elapsed time (s) 0.29759324100086815
-    [DLIB] Number of detected faces: 1 Elapsed time (s) 0.4645231469985447
-    [DLIB] Number of detected faces: 1 Elapsed time (s) 0.22433764200104633
-    ```
+    Here's the table comparing RGB vs Grayscale processing times:
 
-    Here's the table comparing RGB (high resolution) vs Grayscale processing times with speed improvements:
+    | Method | Image | RGB time (s) | Gray time (s) | Speed improvement |
+    |---|---|---|---|---|
+    | dlib | 0 | 1.362 | 0.893 | 34.4% ⚡ |
+    | dlib | 1 | 0.451 | 0.298 | 33.9% ⚡ |
+    | dlib | 2 | 0.696 | 0.465 | 33.2% ⚡ |
+    | dlib | 3 | 0.333 | 0.224 | 32.7% ⚡ |
 
-    | Image | Distance | RGB time (s) | Gray time (s) | Speed improvement (%) |
-    |---|---|----|----|---|
-    | 1 | Selfie | 1.348 | 0.905 | 32.8% ⚡ |
-    | 2 | Portrait | 0.447 | 0.301 | 32.7% ⚡ |
-    | 3 | ~2 meters | 0.694 | 0.471 | 32.1% |
-
-    The grayscale mode consistently delivers approximately **33% speed improvement** across all high-resolution image sizes
+    Consistent **~33% speed improvement** across all images regardless of size.
 
     Now let's experiment with lower image resolution!
     """)
@@ -253,24 +241,14 @@ def _(images: list[Image], show_detected_faces_dlib):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ```
-    [DLIB] scaled the image from 1808x3216 to 54x96
-    [DLIB] Number of detected faces: 1 Elapsed time (s) 0.001399556000251323
-    [DLIB] scaled the image from 1200x1600 to 114x152
-    [DLIB] Number of detected faces: 1 Elapsed time (s) 0.004598046001774492
-    [DLIB] scaled the image from 1741x1741 to 275x275
-    [DLIB] Number of detected faces: 1 Elapsed time (s) 0.01821794599891291
-    [DLIB] scaled the image from 901x1600 to 405x720
-    [DLIB] Number of detected faces: 1 Elapsed time (s) 0.06977680300042266
-    ```
+    | Method | Image | Scale | Compressed size | Time (s) | Times faster |
+    |---|---|---|---|---|---|
+    | dlib | 0 | 0.03 | 54x96 | 0.00140 | 973x 🚀 |
+    | dlib | 1 | 0.095 | 114x152 | 0.00460 | 98x 🔥 |
+    | dlib | 2 | 0.158 | 275x275 | 0.01822 | 38x |
+    | dlib | 3 | 0.45 | 405x720 | 0.06978 | 4.8x |
 
-    | Image | Distance | Compressed size | Processing time (s) | Times faster |
-    |---|---|---|----|---|
-    | 1 | Selfie |  54x96 | 0.002 | 674 🚀 |
-    | 1 | Portrait |  114x152 | 0.005 | 89 🔥 |
-    | 1 | ~2 meters |  275x275 | 0.018 | 38 |
-
-    As the results show, the closer is the face, the more can we compress the image and the detector can do the job faster. Using image compression lead to huge speedup of face detection
+    The closer the face, the more we can compress and the faster detection runs.
     """)
     return
 
@@ -300,26 +278,14 @@ def _(images: list[Image], show_detected_faces_dlib):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ```
-    [DLIB] scaled the image from 1808x3216 to 54x96
-    [DLIB] Number of detected faces: 1 Elapsed time (s) 0.0011582459992496297
-    [DLIB] scaled the image from 1200x1600 to 114x152
-    [DLIB] Number of detected faces: 1 Elapsed time (s) 0.003683079998154426
-    [DLIB] scaled the image from 1741x1741 to 275x275
-    [DLIB] Number of detected faces: 1 Elapsed time (s) 0.012993604999792296
-    [DLIB] scaled the image from 901x1600 to 405x720
-    [DLIB] Number of detected faces: 1 Elapsed time (s) 0.051755240998318186
-    ```
+    The algorithm detects faces correctly in grayscale at the same compression rate.
 
-    As we can see, the algorithm did manage to detect my face without colour information and with the same comprassion rate
-
-    | Image | Distance | Compressed size | RGB time (s) | Gray time (s) | Speed improvement (%) |
-    |---|---|---|----|----|---|
-    | 1 | Selfie | 54x96 | 0.002 | 0.001 | 50% ⚡ |
-    | 2 | Portrait | 114x152 | 0.005 | 0.003 | 40% ⚡ |
-    | 3 | ~2 meters | 275x275 | 0.018 | 0.013 | 28% |
-
-    The grayscale mode provides consistent speed improvements across all image sizes, with the most significant gains on smaller/compressed images (50% faster for the selfie).
+    | Method | Image | Compressed size | RGB time (s) | Gray time (s) | Speed improvement |
+    |---|---|---|---|---|---|
+    | dlib | 0 | 54x96 | 0.00140 | 0.00116 | 17.3% ⚡ |
+    | dlib | 1 | 114x152 | 0.00460 | 0.00368 | 19.9% ⚡ |
+    | dlib | 2 | 275x275 | 0.01822 | 0.01299 | 28.7% ⚡ |
+    | dlib | 3 | 405x720 | 0.06978 | 0.05176 | 25.8% ⚡ |
     """)
     return
 
@@ -349,13 +315,15 @@ def _(images: list[Image], show_detected_faces_dlib):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ```
-    [DLIB] Number of detected faces: 9 Elapsed time (s) 2.1163107080028567
-    [DLIB] Number of detected faces: 4 Elapsed time (s) 0.048051828001916874
-    [DLIB] Number of detected faces: 3 Elapsed time (s) 0.2780568609996408
-    [DLIB] Number of detected faces: 3 Elapsed time (s) 0.1571259039992583
-    [DLIB] Number of detected faces: 77 Elapsed time (s) 5.681187735001004
-    ```
+    | Method | Image | Faces | Time (s) |
+    |---|---|---|---|
+    | dlib | 4 | 9 | 2.116 |
+    | dlib | 5 | 4 | 0.048 |
+    | dlib | 7 | 3 | 0.278 |
+    | dlib | 8 | 3 | 0.157 |
+    | dlib | 6 | 77 | 5.681 |
+
+    And in gray mode:
     """)
     return
 
@@ -377,25 +345,13 @@ def _(images: list[Image], show_detected_faces_dlib):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ```
-    [DLIB] Number of detected faces: 10 Elapsed time (s) 1.4383498239985784
-    [DLIB] Number of detected faces: 4 Elapsed time (s) 0.034515147999627516
-    [DLIB] Number of detected faces: 3 Elapsed time (s) 0.1903794800018659
-    [DLIB] Number of detected faces: 3 Elapsed time (s) 0.10736422700210824
-    [DLIB] Number of detected faces: 76 Elapsed time (s) 3.8629781440031365
-    ```
-
-    Here's the complete table showing precision loss across different scales:
-
-    | Resolution | Detected faces | Detection loss | Processing time (s) | Speed improvement |
-    |---|---|---|----|----|
-    | 4080x2296 (original) | 9 | — | 2.132 | baseline |
-    | 2040x1148 (0.5 scale) | 8 | 1 face (11% loss) | 0.541 | 3.9x faster ⚡ |
-    | 408x230 (0.1 scale) | 2 | 7 faces (78% loss) ❌ | 0.022 | 96.8x faster 🚀 |
-
-    **Key findings:**
-    - **0.5 scale (50% compression)**: Minimal precision loss (1 face) with 3.9x speed improvement — good balance
-    - **0.1 scale (10% compression)**: Massive speed gain (96.8x faster) but unacceptable precision loss (78%)
+    | Method | Image | RGB faces | Gray faces | RGB time (s) | Gray time (s) | Speed improvement |
+    |---|---|---|---|---|---|---|
+    | dlib | 4 | 9 | 10 | 2.116 | 1.438 | 32.0% ⚡ |
+    | dlib | 5 | 4 | 4 | 0.048 | 0.035 | 27.1% |
+    | dlib | 7 | 3 | 3 | 0.278 | 0.190 | 31.7% ⚡ |
+    | dlib | 8 | 3 | 3 | 0.157 | 0.107 | 31.8% ⚡ |
+    | dlib | 6 | 77 | 76 | 5.681 | 3.863 | 32.0% ⚡ |
     """)
     return
 
@@ -415,28 +371,14 @@ def _(images: list[Image], show_detected_faces_dlib):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ```
-    [DLIB] scaled the image from 1204x995 to 843x696
-    [DLIB] Number of detected faces: 3 Elapsed time (s) 0.13740770900039934
-    [DLIB] scaled the image from 1204x995 to 602x498
-    [DLIB] Number of detected faces: 4 Elapsed time (s) 0.07024258800083771
-    [DLIB] scaled the image from 1204x995 to 482x398
-    [DLIB] Number of detected faces: 3 Elapsed time (s) 0.04472596399864415
-    ```
+    Scale precision vs. speed for image 7 (beatles, 1204x995 original, 3 faces):
 
-    Here's the table showing precision loss across different scales for the multi-face image:
-
-    | Resolution | Scale | Detected faces | Detection loss | Processing time (s) | Speed improvement |
-    |---|---|---|---|----|----|
-    | 3504x2336 (original) | 1.0 | 201 | — | 1.86 | baseline |
-    | 2453x1635 | 0.7 | 192 | 9 faces (4.5% loss) | 0.916 | 2.0x faster ⚡ |
-    | 1752x1168 | 0.5 | 132 | 69 faces (34.3% loss) | 0.466 | 4.0x faster ⚡ |
-    | 1402x934 | 0.4 | 17 | 184 faces (91.5% loss) ❌ | 0.297 | 6.3x faster 🚀 |
-
-    **Key findings:**
-    - **0.7 scale**: Excellent balance — minimal loss (4.5%) with 2x speed improvement
-    - **0.5 scale**: Moderate compression — acceptable for many uses (34% loss, 4x faster)
-    - **0.4 scale**: Severe precision degradation (91.5% loss) despite 6.3x speed gain
+    | Method | Image | Resolution | Scale | Faces | Time (s) | Speed improvement |
+    |---|---|---|---|---|---|---|
+    | dlib | 7 | 1204x995 | 1.0 | 3 | 0.278 | baseline |
+    | dlib | 7 | 843x696 | 0.7 | 3 | 0.137 | 2.0x faster ⚡ |
+    | dlib | 7 | 602x498 | 0.5 | 4 | 0.070 | 4.0x faster ⚡ |
+    | dlib | 7 | 482x398 | 0.4 | 3 | 0.045 | 6.2x faster 🚀 |
     """)
     return
 
@@ -456,14 +398,14 @@ def _(images: list[Image], show_detected_faces_dlib):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ```
-    [DLIB] scaled the image from 6048x4024 to 2419x1610
-    [DLIB] Number of detected faces: 75 Elapsed time (s) 0.8857080109992239
-    [DLIB] scaled the image from 6048x4024 to 1996x1328
-    [DLIB] Number of detected faces: 58 Elapsed time (s) 0.6056475620025594
-    [DLIB] scaled the image from 6048x4024 to 1814x1207
-    [DLIB] Number of detected faces: 48 Elapsed time (s) 0.49828719300057855
-    ```
+    Scale precision vs. speed for image 6 (run, 6048x4024 original, 77 faces):
+
+    | Method | Image | Resolution | Scale | Faces | Face loss | Time (s) | Speed improvement |
+    |---|---|---|---|---|---|---|---|
+    | dlib | 6 | 6048x4024 | 1.0 | 77 | — | 5.681 | baseline |
+    | dlib | 6 | 2419x1610 | 0.4 | 75 | 2 (2.6%) | 0.886 | 6.4x faster ⚡ |
+    | dlib | 6 | 1996x1328 | 0.33 | 58 | 19 (24.7%) | 0.606 | 9.4x faster 🔥 |
+    | dlib | 6 | 1814x1207 | 0.3 | 48 | 29 (37.7%) | 0.498 | 11.4x faster 🚀 |
     """)
     return
 
@@ -551,18 +493,12 @@ def _(images: list[Image], show_detected_faces_vj):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ```
-    [VJ] Number of detected faces: 1 Elapsed time (s) 0.13776485600101296
-    [VJ] Number of detected faces: 2 Elapsed time (s) 0.11216415699891513
-    [VJ] Number of detected faces: 1 Elapsed time (s) 0.4334344859998964
-    [VJ] Number of detected faces: 2 Elapsed time (s) 0.16609652999977698
-    ```
-
-    | Image | Distance | Image size | Processing time (s) |
-    |---|---|---|----|
-    | 1 | Selfie |  1808x3216 | 1.348 |
-    | 1 | Portrait |  1200x1600 | 0.447 |
-    | 1 | ~2 meters |  1741x1741 | 0.694 |
+    | Method | Image | Faces | Image size | Time (s) |
+    |---|---|---|---|---|
+    | VJ | 0 | 1 | 1808x3216 | 0.138 |
+    | VJ | 1 | 2 | 1200x1600 | 0.112 |
+    | VJ | 2 | 1 | 1741x1741 | 0.433 |
+    | VJ | 3 | 2 | 901x1600 | 0.166 |
 
     And in gray mode:
     """)
@@ -586,22 +522,14 @@ def _(images: list[Image], show_detected_faces_vj):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ```
-    [VJ] Number of detected faces: 1 Elapsed time (s) 0.14366232199972728
-    [VJ] Number of detected faces: 4 Elapsed time (s) 0.12708506400304032
-    [VJ] Number of detected faces: 1 Elapsed time (s) 0.37958746300137136
-    [VJ] Number of detected faces: 2 Elapsed time (s) 0.16312288199696923
-    ```
+    Unlike dlib, VJ does not benefit consistently from grayscale — results are mixed:
 
-    Here's the table comparing RGB (high resolution) vs Grayscale processing times with speed improvements:
-
-    | Image | Distance | RGB time (s) | Gray time (s) | Speed improvement (%) |
-    |---|---|----|----|---|
-    | 1 | Selfie | 1.348 | 0.905 | 32.8% ⚡ |
-    | 2 | Portrait | 0.447 | 0.301 | 32.7% ⚡ |
-    | 3 | ~2 meters | 0.694 | 0.471 | 32.1% |
-
-    The grayscale mode consistently delivers approximately **33% speed improvement** across all high-resolution image sizes
+    | Method | Image | RGB faces | Gray faces | RGB time (s) | Gray time (s) | Speed improvement |
+    |---|---|---|---|---|---|---|
+    | VJ | 0 | 1 | 1 | 0.138 | 0.144 | -4.3% 🔴 |
+    | VJ | 1 | 2 | 4 | 0.112 | 0.127 | -13.4% 🔴 |
+    | VJ | 2 | 1 | 1 | 0.433 | 0.380 | 12.2% ⚡ |
+    | VJ | 3 | 2 | 2 | 0.166 | 0.163 | 1.8% |
 
     Now let's experiment with lower image resolution!
     """)
@@ -625,24 +553,12 @@ def _(images: list[Image], show_detected_faces_vj):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ```
-    [VJ] scaled the image from 1808x3216 to 54x96
-    [VJ] Number of detected faces: 1 Elapsed time (s) 0.0013493650003510993
-    [VJ] scaled the image from 1200x1600 to 168x224
-    [VJ] Number of detected faces: 1 Elapsed time (s) 0.007867862001148751
-    [VJ] scaled the image from 1741x1741 to 275x275
-    [VJ] Number of detected faces: 1 Elapsed time (s) 0.00982876799753285
-    [VJ] scaled the image from 901x1600 to 405x720
-    [VJ] Number of detected faces: 1 Elapsed time (s) 0.03792656099903979
-    ```
-
-    | Image | Distance | Compressed size | Processing time (s) | Times faster |
-    |---|---|---|----|---|
-    | 1 | Selfie |  54x96 | 0.002 | 674 🚀 |
-    | 1 | Portrait |  114x152 | 0.005 | 89 🔥 |
-    | 1 | ~2 meters |  275x275 | 0.018 | 38 |
-
-    As the results show, the closer is the face, the more can we compress the image and the detector can do the job faster. Using image compression lead to huge speedup of face detection
+    | Method | Image | Scale | Compressed size | Time (s) | Times faster |
+    |---|---|---|---|---|---|
+    | VJ | 0 | 0.03 | 54x96 | 0.00135 | 102x 🚀 |
+    | VJ | 1 | 0.14 | 168x224 | 0.00787 | 14x ⚡ |
+    | VJ | 2 | 0.158 | 275x275 | 0.00983 | 44x 🔥 |
+    | VJ | 3 | 0.45 | 405x720 | 0.03793 | 4.4x |
     """)
     return
 
@@ -672,26 +588,14 @@ def _(images: list[Image], show_detected_faces_vj):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ```
-    [VJ] scaled the image from 1808x3216 to 54x96
-    [VJ] Number of detected faces: 1 Elapsed time (s) 0.0013295270000526216
-    [VJ] scaled the image from 1200x1600 to 168x224
-    [VJ] Number of detected faces: 1 Elapsed time (s) 0.015583098997012712
-    [VJ] scaled the image from 1741x1741 to 275x275
-    [VJ] Number of detected faces: 1 Elapsed time (s) 0.01837664000049699
-    [VJ] scaled the image from 901x1600 to 405x720
-    [VJ] Number of detected faces: 1 Elapsed time (s) 0.06837157599875354
-    ```
+    VJ in gray mode is slower at compressed sizes — the opposite of dlib:
 
-    As we can see, the algorithm did manage to detect my face without colour information and with the same comprassion rate
-
-    | Image | Distance | Compressed size | RGB time (s) | Gray time (s) | Speed improvement (%) |
-    |---|---|---|----|----|---|
-    | 1 | Selfie | 54x96 | 0.002 | 0.001 | 50% ⚡ |
-    | 2 | Portrait | 114x152 | 0.005 | 0.003 | 40% ⚡ |
-    | 3 | ~2 meters | 275x275 | 0.018 | 0.013 | 28% |
-
-    The grayscale mode provides consistent speed improvements across all image sizes, with the most significant gains on smaller/compressed images (50% faster for the selfie).
+    | Method | Image | Compressed size | RGB time (s) | Gray time (s) | Speed improvement |
+    |---|---|---|---|---|---|
+    | VJ | 0 | 54x96 | 0.00135 | 0.00133 | 1.4% |
+    | VJ | 1 | 168x224 | 0.00787 | 0.01558 | -98.1% 🔴 |
+    | VJ | 2 | 275x275 | 0.00983 | 0.01838 | -87.0% 🔴 |
+    | VJ | 3 | 405x720 | 0.03793 | 0.06837 | -80.3% 🔴 |
     """)
     return
 
@@ -721,13 +625,15 @@ def _(images: list[Image], show_detected_faces_vj):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ```
-    [VJ] Number of detected faces: 11 Elapsed time (s) 0.6229980169991904
-    [VJ] Number of detected faces: 1 Elapsed time (s) 0.022243029001401737
-    [VJ] Number of detected faces: 4 Elapsed time (s) 0.058211070998368086
-    [VJ] Number of detected faces: 2 Elapsed time (s) 0.06021352500101784
-    [VJ] Number of detected faces: 76 Elapsed time (s) 2.3250661239981127
-    ```
+    | Method | Image | Faces | Time (s) |
+    |---|---|---|---|
+    | VJ | 4 | 11 | 0.623 |
+    | VJ | 5 | 1 | 0.022 |
+    | VJ | 7 | 4 | 0.058 |
+    | VJ | 8 | 2 | 0.060 |
+    | VJ | 6 | 76 | 2.325 |
+
+    And in gray mode:
     """)
     return
 
@@ -749,22 +655,15 @@ def _(images: list[Image], show_detected_faces_vj):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ```
-    [VJ] Number of detected faces: 12 Elapsed time (s) 0.6256832250001025
-    [VJ] Number of detected faces: 2 Elapsed time (s) 0.023428890999639407
-    [VJ] Number of detected faces: 4 Elapsed time (s) 0.055134385998826474
-    [VJ] Number of detected faces: 2 Elapsed time (s) 0.05295468899930711
-    [VJ] Number of detected faces: 74 Elapsed time (s) 2.3168526890003704
-    ```
+    | Method | Image | RGB faces | Gray faces | RGB time (s) | Gray time (s) | Speed improvement |
+    |---|---|---|---|---|---|---|
+    | VJ | 4 | 11 | 12 | 0.623 | 0.626 | -0.4% |
+    | VJ | 5 | 1 | 2 | 0.022 | 0.023 | -5.4% |
+    | VJ | 7 | 4 | 4 | 0.058 | 0.055 | 5.3% |
+    | VJ | 8 | 2 | 2 | 0.060 | 0.053 | 11.7% ⚡ |
+    | VJ | 6 | 76 | 74 | 2.325 | 2.317 | 0.3% |
 
-    | Image | Faces | RGB time (s) | Gray time (s) | Speed improvement (%) |
-    |---|---|----|----|---|
-    | 1 | 9 | 2.132 | 1.438 | 32.6% ⚡ |
-    | 2 | 201 | 1.86 | 1.26 | 32.3% ⚡ |
-
-    We can see consistent **~32% speed improvement** with grayscale mode across both single-digit and multi-face scenarios, confirming that the number of detected faces doesn't significantly impact the RGB-to-grayscale performance gain ratio.
-
-    Interestingly, switching to gray mode made the algorithm find a doll face on Sasha's T-shirt! (1 more than the RGB version), while the photo with sport fans has now 6 less faces detected.
+    Unlike dlib's consistent ~32% gain, VJ shows negligible or even negative effect from grayscale on multi-face images.
     """)
     return
 
@@ -784,26 +683,14 @@ def _(images: list[Image], show_detected_faces_vj):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ```
-    [VJ] scaled the image from 6048x4024 to 2419x1610
-    [VJ] Number of detected faces: 59 Elapsed time (s) 0.4481629290021374
-    [VJ] scaled the image from 6048x4024 to 1996x1328
-    [VJ] Number of detected faces: 49 Elapsed time (s) 0.32766186900335015
-    [VJ] scaled the image from 6048x4024 to 1814x1207
-    [VJ] Number of detected faces: 45 Elapsed time (s) 0.2968256599997403
-    ```
+    Scale precision vs. speed for image 6 (run, 6048x4024 original, 76 faces):
 
-    Here's the complete table showing precision loss across different scales:
-
-    | Resolution | Detected faces | Detection loss | Processing time (s) | Speed improvement |
-    |---|---|---|----|----|
-    | 4080x2296 (original) | 9 | — | 2.132 | baseline |
-    | 2040x1148 (0.5 scale) | 8 | 1 face (11% loss) | 0.541 | 3.9x faster ⚡ |
-    | 408x230 (0.1 scale) | 2 | 7 faces (78% loss) ❌ | 0.022 | 96.8x faster 🚀 |
-
-    **Key findings:**
-    - **0.5 scale (50% compression)**: Minimal precision loss (1 face) with 3.9x speed improvement — good balance
-    - **0.1 scale (10% compression)**: Massive speed gain (96.8x faster) but unacceptable precision loss (78%)
+    | Method | Image | Resolution | Scale | Faces | Face loss | Time (s) | Speed improvement |
+    |---|---|---|---|---|---|---|---|
+    | VJ | 6 | 6048x4024 | 1.0 | 76 | — | 2.325 | baseline |
+    | VJ | 6 | 2419x1610 | 0.4 | 59 | 17 (22.4%) | 0.448 | 5.2x faster ⚡ |
+    | VJ | 6 | 1996x1328 | 0.33 | 49 | 27 (35.5%) | 0.328 | 7.1x faster ⚡ |
+    | VJ | 6 | 1814x1207 | 0.3 | 45 | 31 (40.8%) | 0.297 | 7.8x faster 🚀 |
     """)
     return
 
@@ -822,26 +709,13 @@ def _(images: list[Image], show_detected_faces_vj):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ```
-    [VJ] scaled the image from 1204x995 to 361x298
-    [VJ] Number of detected faces: 4 Elapsed time (s) 0.011466265998024028
-    [VJ] scaled the image from 1204x995 to 301x249
-    [VJ] Number of detected faces: 3 Elapsed time (s) 0.009432504000869812
-    ```
+    Scale precision vs. speed for image 7 (beatles, 1204x995 original, 4 faces):
 
-    Here's the table showing precision loss across different scales for the multi-face image:
-
-    | Resolution | Scale | Detected faces | Detection loss | Processing time (s) | Speed improvement |
-    |---|---|---|---|----|----|
-    | 3504x2336 (original) | 1.0 | 201 | — | 1.86 | baseline |
-    | 2453x1635 | 0.7 | 192 | 9 faces (4.5% loss) | 0.916 | 2.0x faster ⚡ |
-    | 1752x1168 | 0.5 | 132 | 69 faces (34.3% loss) | 0.466 | 4.0x faster ⚡ |
-    | 1402x934 | 0.4 | 17 | 184 faces (91.5% loss) ❌ | 0.297 | 6.3x faster 🚀 |
-
-    **Key findings:**
-    - **0.7 scale**: Excellent balance — minimal loss (4.5%) with 2x speed improvement
-    - **0.5 scale**: Moderate compression — acceptable for many uses (34% loss, 4x faster)
-    - **0.4 scale**: Severe precision degradation (91.5% loss) despite 6.3x speed gain
+    | Method | Image | Resolution | Scale | Faces | Face loss | Time (s) | Speed improvement |
+    |---|---|---|---|---|---|---|---|
+    | VJ | 7 | 1204x995 | 1.0 | 4 | — | 0.058 | baseline |
+    | VJ | 7 | 361x298 | 0.3 | 4 | 0 (0%) | 0.011 | 5.1x faster ⚡ |
+    | VJ | 7 | 301x249 | 0.25 | 3 | 1 (25%) | 0.009 | 6.2x faster 🚀 |
     """)
     return
 
