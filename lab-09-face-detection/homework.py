@@ -47,7 +47,13 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    # CV lab 9. Face detection
+    # CV Lab 9 — Face Detection
+
+    This lab compares two classical face detectors — **dlib HOG+SVM** and **Viola-Jones (Haar cascade)** — across single-face and multi-face photographs. For each detector we measure:
+
+    - baseline performance on full-resolution RGB images
+    - the effect of switching to **grayscale** input
+    - the speed/recall trade-off of **downscaling** the image before detection
     """)
     return
 
@@ -55,7 +61,16 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    First of all, let's take a look at the photos selected for the experiment
+    ## Dataset
+
+    Nine photos split into two groups:
+
+    | Group | Indices | Description |
+    |---|---|---|
+    | Single face | 0–3 | One subject at increasing distances: selfie, portrait, ~2 m, ~5 m |
+    | Multiple faces | 4–8 | Groups from ~3 faces (7, 8) up to a crowd of 77 (6, "run") |
+
+    Image 8 ("drawing") is a sketched scene — an edge case for a frontal-face model trained on photos.
     """)
     return
 
@@ -95,7 +110,7 @@ def _(images: list[Image]):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    Now we'll load the `dlib` **frontal** face detector and define a utility function for plotting the photo with rectangles on detected faces
+    ## 1. dlib HOG + SVM detector
     """)
     return
 
@@ -155,9 +170,9 @@ def _(detector, random_color):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Detecting single face
+    ### 1.1 Single-face images (0–3)
 
-    Let's test some solo photos in RGB mode
+    Full-resolution RGB — establishes the baseline per-image processing time.
     """)
     return
 
@@ -186,7 +201,7 @@ def _():
     | dlib | 2 | 1 | 1741x1741 | 0.696 |
     | dlib | 3 | 1 | 901x1600 | 0.333 |
 
-    And in gray mode:
+    All four detected correctly. Time scales roughly with pixel count. Same images in grayscale:
     """)
     return
 
@@ -208,8 +223,6 @@ def _(images: list[Image], show_detected_faces_dlib):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    Here's the table comparing RGB vs Grayscale processing times:
-
     | Method | Image | RGB time (s) | Gray time (s) | Speed improvement |
     |---|---|---|---|---|
     | dlib | 0 | 1.362 | 0.893 | 34.4% ⚡ |
@@ -217,9 +230,9 @@ def _():
     | dlib | 2 | 0.696 | 0.465 | 33.2% ⚡ |
     | dlib | 3 | 0.333 | 0.224 | 32.7% ⚡ |
 
-    Consistent **~33% speed improvement** across all images regardless of size.
+    **~33% consistent speedup** across all resolutions and distances, independent of image size.
 
-    Now let's experiment with lower image resolution!
+    Next: how far can we shrink the image before detection fails?
     """)
     return
 
@@ -241,6 +254,8 @@ def _(images: list[Image], show_detected_faces_dlib):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
+    Each scale was tuned to the minimum at which detection still succeeds. The face's pixel size in the *compressed* image is what matters, not the original resolution.
+
     | Method | Image | Scale | Compressed size | Time (s) | Times faster |
     |---|---|---|---|---|---|
     | dlib | 0 | 0.03 | 54x96 | 0.00140 | 973x 🚀 |
@@ -248,7 +263,7 @@ def _():
     | dlib | 2 | 0.158 | 275x275 | 0.01822 | 38x |
     | dlib | 3 | 0.45 | 405x720 | 0.06978 | 4.8x |
 
-    The closer the face, the more we can compress and the faster detection runs.
+    The selfie (image 0) at 3% of its original size still detects fine — because the face fills most of the frame. Image 3 (subject at ~5 m) needs 45% of the original to keep the face large enough, so the speedup is modest.
     """)
     return
 
@@ -256,7 +271,7 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    Let's try to process the compressed pic using gray mode:
+    Same scales, grayscale input — does the gray speedup hold when images are already tiny?
     """)
     return
 
@@ -278,7 +293,7 @@ def _(images: list[Image], show_detected_faces_dlib):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    The algorithm detects faces correctly in grayscale at the same compression rate.
+    Detection succeeds in all cases. The gray speedup is smaller here than at full resolution:
 
     | Method | Image | Compressed size | RGB time (s) | Gray time (s) | Speed improvement |
     |---|---|---|---|---|---|
@@ -286,6 +301,8 @@ def _():
     | dlib | 1 | 114x152 | 0.00460 | 0.00368 | 19.9% ⚡ |
     | dlib | 2 | 275x275 | 0.01822 | 0.01299 | 28.7% ⚡ |
     | dlib | 3 | 405x720 | 0.06978 | 0.05176 | 25.8% ⚡ |
+
+    At tiny sizes (54×96) the gray conversion cost is a larger slice of total time, so the benefit is real but proportionally smaller (**17–29%** vs. the ~33% seen at full resolution). The practical recommendation is to **combine both**: compress first, then pass grayscale.
     """)
     return
 
@@ -293,7 +310,9 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    # Detecting multiple faces
+    ### 1.2 Multi-face images (4–8)
+
+    Full-resolution RGB baseline.
     """)
     return
 
@@ -323,7 +342,7 @@ def _():
     | dlib | 8 | 3 | 0.157 |
     | dlib | 6 | 77 | 5.681 |
 
-    And in gray mode:
+    Image 5 ("masks") returns only 4 detections despite showing a group — medical masks occlude the lower face, breaking the HOG frontal template. Image 6 takes 5.7 s due to its 6048×4024 resolution. In grayscale:
     """)
     return
 
@@ -352,6 +371,12 @@ def _():
     | dlib | 7 | 3 | 3 | 0.278 | 0.190 | 31.7% ⚡ |
     | dlib | 8 | 3 | 3 | 0.157 | 0.107 | 31.8% ⚡ |
     | dlib | 6 | 77 | 76 | 5.681 | 3.863 | 32.0% ⚡ |
+
+    The **~32% speedup** holds across all multi-face images, confirming it is independent of scene complexity or face count. Detection counts are virtually identical — grayscale does not reduce recall.
+
+    #### Scale sensitivity
+
+    Since image 6 is the most expensive (6048×4024, 77 faces), and image 7 is a compact multi-face photo, we test how aggressively each can be downscaled.
     """)
     return
 
@@ -371,7 +396,7 @@ def _(images: list[Image], show_detected_faces_dlib):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    Scale precision vs. speed for image 7 (beatles, 1204x995 original, 3 faces):
+    Image 7 ("beatles") — 4 people, original 1204×995. Notable: scale 0.5 is the only one that finds all four faces. Scales 0.7 and 0.4 each miss a *different* person (bottom and rightmost respectively), meaning the full-resolution pass also misses one. The 0.5 scale happens to produce the best recall here.
 
     | Method | Image | Resolution | Scale | Faces | Time (s) | Speed improvement |
     |---|---|---|---|---|---|---|
@@ -398,7 +423,7 @@ def _(images: list[Image], show_detected_faces_dlib):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    Scale precision vs. speed for image 6 (run, 6048x4024 original, 77 faces):
+    Image 6 ("run") — crowd of 77 faces, original 6048×4024. At 0.4 scale almost nothing is lost; scaling lower causes face count to drop dramatically as distant faces fall below the detector's minimum detectable size.
 
     | Method | Image | Resolution | Scale | Faces | Face loss | Time (s) | Speed improvement |
     |---|---|---|---|---|---|---|---|
@@ -406,6 +431,8 @@ def _():
     | dlib | 6 | 2419x1610 | 0.4 | 75 | 2 (2.6%) | 0.886 | 6.4x faster ⚡ |
     | dlib | 6 | 1996x1328 | 0.33 | 58 | 19 (24.7%) | 0.606 | 9.4x faster 🔥 |
     | dlib | 6 | 1814x1207 | 0.3 | 48 | 29 (37.7%) | 0.498 | 11.4x faster 🚀 |
+
+    **0.4 scale is the practical limit** for this image: 6.4× faster, only 2.6% loss.
     """)
     return
 
@@ -413,7 +440,9 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Viola-Jones face detection
+    ## 2. Viola-Jones (Haar cascade) detector
+
+    `cv2.CascadeClassifier` with `haarcascade_frontalface_default.xml`. Parameters: `scaleFactor=1.1`, `minNeighbors=10`.
     """)
     return
 
@@ -469,9 +498,9 @@ def _(face_cascade, random_color):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Detecting single face
+    ### 2.1 Single-face images (0–3)
 
-    Let's test some solo photos in RGB mode
+    Full-resolution RGB baseline.
     """)
     return
 
@@ -500,7 +529,7 @@ def _():
     | VJ | 2 | 1 | 1741x1741 | 0.433 |
     | VJ | 3 | 2 | 901x1600 | 0.166 |
 
-    And in gray mode:
+    VJ is **5–10× faster than dlib** at full resolution. Images 1 and 3 return 2 detections — false positives are possible at `minNeighbors=10`. In grayscale:
     """)
     return
 
@@ -522,8 +551,6 @@ def _(images: list[Image], show_detected_faces_vj):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    Unlike dlib, VJ does not benefit consistently from grayscale — results are mixed:
-
     | Method | Image | RGB faces | Gray faces | RGB time (s) | Gray time (s) | Speed improvement |
     |---|---|---|---|---|---|---|
     | VJ | 0 | 1 | 1 | 0.138 | 0.144 | -4.3% 🔴 |
@@ -531,7 +558,7 @@ def _():
     | VJ | 2 | 1 | 1 | 0.433 | 0.380 | 12.2% ⚡ |
     | VJ | 3 | 2 | 2 | 0.166 | 0.163 | 1.8% |
 
-    Now let's experiment with lower image resolution!
+    Unlike dlib's stable ~33% gain, VJ shows **no consistent benefit from grayscale** — results range from −13% to +12%. Notably, image 1 in grayscale returns 4 detections vs. 2 in RGB, showing that colour information suppresses some false positives. Next: downscaling.
     """)
     return
 
@@ -553,12 +580,16 @@ def _(images: list[Image], show_detected_faces_vj):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
+    Same minimum-detectable scales as dlib, for a direct comparison:
+
     | Method | Image | Scale | Compressed size | Time (s) | Times faster |
     |---|---|---|---|---|---|
     | VJ | 0 | 0.03 | 54x96 | 0.00135 | 102x 🚀 |
     | VJ | 1 | 0.14 | 168x224 | 0.00787 | 14x ⚡ |
     | VJ | 2 | 0.158 | 275x275 | 0.00983 | 44x 🔥 |
     | VJ | 3 | 0.45 | 405x720 | 0.03793 | 4.4x |
+
+    VJ gains less from compression than dlib (102× vs. 973× for image 0) because it was already much faster at full resolution. In grayscale:
     """)
     return
 
@@ -566,7 +597,7 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    Let's try to process the compressed pic using gray mode:
+    Same scales, grayscale input:
     """)
     return
 
@@ -603,7 +634,9 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    # Detecting multiple faces
+    ### 2.2 Multi-face images (4–8)
+
+    Full-resolution RGB baseline.
     """)
     return
 
@@ -632,6 +665,8 @@ def _():
     | VJ | 7 | 4 | 0.058 |
     | VJ | 8 | 2 | 0.060 |
     | VJ | 6 | 76 | 2.325 |
+
+    VJ finds more detections than dlib on image 4 (11 vs. 9): one extra is a partially-occluded face dlib misses, one is a false positive. On image 5 VJ finds only 1 face while dlib finds 4, missing 3.
 
     And in gray mode:
     """)
@@ -691,6 +726,8 @@ def _():
     | VJ | 6 | 2419x1610 | 0.4 | 59 | 17 (22.4%) | 0.448 | 5.2x faster ⚡ |
     | VJ | 6 | 1996x1328 | 0.33 | 49 | 27 (35.5%) | 0.328 | 7.1x faster ⚡ |
     | VJ | 6 | 1814x1207 | 0.3 | 45 | 31 (40.8%) | 0.297 | 7.8x faster 🚀 |
+
+    At scale 0.4, VJ already loses 22.4% of faces — compare with dlib's 2.6% at the same scale. Downscaling hurts VJ's recall much faster.
     """)
     return
 
@@ -716,6 +753,31 @@ def _():
     | VJ | 7 | 1204x995 | 1.0 | 4 | — | 0.058 | baseline |
     | VJ | 7 | 361x298 | 0.3 | 4 | 0 (0%) | 0.011 | 5.1x faster ⚡ |
     | VJ | 7 | 301x249 | 0.25 | 3 | 1 (25%) | 0.009 | 6.2x faster 🚀 |
+
+    Scale 0.3 is the sweet spot: 5.1× speedup with no face loss. Below that the detector misses one face.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ## Conclusions
+
+    | | dlib HOG+SVM | Viola-Jones (Haar) |
+    |---|---|---|
+    | Single-face recall | 4/4 at full res | 4/4 at full res |
+    | Multi-face recall (image 6) | 77 faces | 76 faces |
+    | Grayscale speedup | ~33% consistent | negligible / inconsistent |
+    | Grayscale at compressed sizes | faster | slower (−80–98%) |
+    | Face loss at 0.4 scale (image 6) | 2.6% | 22.4% |
+    | Base speed (image 6, full res) | 5.681 s | 2.325 s |
+
+    **dlib** is slower at full resolution but degrades gracefully when downscaled, making it practical for high-resolution images with a tuned scale factor.
+
+    **Viola-Jones** is faster out of the box and matches dlib's recall on most images, but suffers much steeper face loss when downscaled and does not benefit from grayscale input.
+
+    For single-face or small-group photos either detector works well. For dense crowds at high resolution, dlib with modest downscaling (0.4×) offers the better speed/recall trade-off.
     """)
     return
 
