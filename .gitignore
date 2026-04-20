@@ -191,3 +191,5 @@ homework_files/
 homework.html
 .jupyter_cache
 __marimo__/
+lab-09-face-detection/data/shape_predictor_68_face_landmarks.dat
+lab-09-face-detection/data/haarcascade_frontalface_default.xml
