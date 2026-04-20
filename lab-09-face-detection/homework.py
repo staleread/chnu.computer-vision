@@ -24,6 +24,20 @@ with app.setup:
         gray: GrayImage
 
 
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    # CV Lab 9 — Face Detection
+
+    This lab compares two classical face detectors — **dlib** and **Viola-Jones** — across single-face and multi-face photographs. For each detector we measure:
+
+    - baseline performance on full-resolution RGB images
+    - the effect of switching to **grayscale** input
+    - the speed/recall trade-off of **downscaling** the image before detection
+    """)
+    return
+
+
 @app.cell
 def _():
     # Some utility functions
@@ -42,20 +56,6 @@ def _():
         return (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
 
     return load_images_by_names, random_color
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    # CV Lab 9 — Face Detection
-
-    This lab compares two classical face detectors — **dlib HOG+SVM** and **Viola-Jones (Haar cascade)** — across single-face and multi-face photographs. For each detector we measure:
-
-    - baseline performance on full-resolution RGB images
-    - the effect of switching to **grayscale** input
-    - the speed/recall trade-off of **downscaling** the image before detection
-    """)
-    return
 
 
 @app.cell(hide_code=True)
@@ -110,7 +110,7 @@ def _(images: list[Image]):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 1. dlib HOG + SVM detector
+    ## 1. dlib detector
     """)
     return
 
@@ -764,7 +764,7 @@ def _():
     mo.md(r"""
     ## Conclusions
 
-    | | dlib HOG+SVM | Viola-Jones (Haar) |
+    | | dlib | Viola-Jones |
     |---|---|---|
     | Single-face recall | 4/4 at full res | 4/4 at full res |
     | Multi-face recall (image 6) | 77 faces | 76 faces |
