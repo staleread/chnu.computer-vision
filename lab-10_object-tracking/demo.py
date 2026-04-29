@@ -37,7 +37,7 @@ def _():
 
 @app.cell
 def _():
-    # Get videos file paths
+    # Get video file paths
     _video_files = [f"data/{file}" for file in os.listdir("data") if file.endswith(('.mp4', '.gif'))]
 
     video_select = mo.ui.dropdown(
@@ -79,29 +79,32 @@ def _():
 
 @app.cell
 def _(first_frame):
-    _h, _w = first_frame.shape[:2]
+    h, w = first_frame.shape[:2]
 
-    x_slider = mo.ui.slider(start=0, stop=_w-1, step=1, value=_w//4, label="X", full_width=True)
-    y_slider = mo.ui.slider(start=0, stop=_h-1, step=1, value=_h//4, label="Y", full_width=True)
-    w_slider = mo.ui.slider(start=1, stop=_w, step=1, value=_w//2, label="Width", full_width=True)
-    h_slider = mo.ui.slider(start=1, stop=_h, step=1, value=_h//2, label="Height", full_width=True)
+    # Sliders for ROI selection
+    x_slider = mo.ui.slider(start=0, stop=w-1, step=1, value=w//4, label="X", full_width=True)
+    y_slider = mo.ui.slider(start=0, stop=h-1, step=1, value=h//4, label="Y", full_width=True)
+    w_slider = mo.ui.slider(start=1, stop=w, step=1, value=w//2, label="Width", full_width=True)
+    h_slider = mo.ui.slider(start=1, stop=h, step=1, value=h//2, label="Height", full_width=True)
 
     mo.vstack([x_slider, y_slider, w_slider, h_slider])
     return h_slider, w_slider, x_slider, y_slider
 
 
 @app.cell
-def _(first_frame, h_slider, w_slider, x_slider, y_slider):
-    # Preview selection
+def _(h_slider, w_slider, x_slider, y_slider):
+    # Get slider values
+    x, y, bw, bh = x_slider.value, y_slider.value, w_slider.value, h_slider.value
+    return bh, bw, x, y
+
+
+@app.cell
+def _(bh, bw, first_frame, x, y):
+    # Preview ROI selection
+
     _preview = first_frame.copy()
-    _x, _y, _bw, _bh = x_slider.value, y_slider.value, w_slider.value, h_slider.value
 
-    # Ensure bbox is within display_frame bounds
-    _h_disp, _w_disp = first_frame.shape[:2]
-    _bw = min(_bw, _w_disp - _x)
-    _bh = min(_bh, _h_disp - _y)
-
-    cv2.rectangle(_preview, (_x, _y), (_x + _bw, _y + _bh), (0, 255, 0), 2)
+    cv2.rectangle(_preview, (x, y), (x + bw, y + bh), (0, 255, 0), 2)
 
     plt.figure(figsize=(8, 5))
     plt.imshow(cv2.cvtColor(_preview, cv2.COLOR_BGR2RGB))
@@ -112,6 +115,7 @@ def _(first_frame, h_slider, w_slider, x_slider, y_slider):
 
 @app.cell
 def _():
+    # UI button for starting tracking
     run_button = mo.ui.run_button(label="Start Tracking")
 
     run_button
@@ -119,31 +123,11 @@ def _():
 
 
 @app.cell
-def _(
-    first_frame,
-    h_slider,
-    run_button,
-    tracker_select,
-    video_select,
-    w_slider,
-    x_slider,
-    y_slider,
-):
+def _(bh, bw, first_frame, run_button, tracker_select, video_select, x, y):
     mo.stop(not run_button.value)
 
-    _x, _y, _bw, _bh = x_slider.value, y_slider.value, w_slider.value, h_slider.value
-
-    # Final bounds check on original resolution
-    _h_orig, _w_orig = first_frame.shape[:2]
-    _x = max(0, min(_x, _w_orig - 1))
-    _y = max(0, min(_y, _h_orig - 1))
-    _bw = max(1, min(_bw, _w_orig - _x))
-    _bh = max(1, min(_bh, _h_orig - _y))
-
-    _orig_bbox = (_x, _y, _bw, _bh)
-
     _tracker = get_tracker(tracker_select.value)
-    _tracker.init(first_frame, _orig_bbox)
+    _tracker.init(first_frame, (x, y, bw, bh))
 
     _cap = cv2.VideoCapture(video_select.value)
     _total_frames = int(_cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -151,7 +135,7 @@ def _(
 
     _frames = []
 
-    # Correct way to use marimo progress bar with a loop
+    # Process each frame (up to 150) with progress bar effect
     for _ in mo.status.progress_bar(range(_max_frames), title="Tracking..."):
         _success, _frame = _cap.read()
         if not _success:
@@ -160,18 +144,26 @@ def _(
         _success, _trk_bbox = _tracker.update(_frame)
 
         if _success:
+            # Draw the object rectange with label
             (_bx, _by, _btw, _bth) = [int(_v) for _v in _trk_bbox]
             cv2.rectangle(_frame, (_bx, _by), (_bx + _btw, _by + _bth), (0, 255, 0), 2)
             cv2.putText(_frame, tracker_select.value, (_bx, _by - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
         else:
             cv2.putText(_frame, "Tracking failure", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
 
+        # Ensure dimensions are even for FFMPEG (libx264 yuv420p)
+        _h, _w = _frame.shape[:2]
+        if _h % 2 != 0 or _w % 2 != 0:
+            _frame = _frame[:_h - (_h % 2), :_w - (_w % 2)]
+
         _frames.append(cv2.cvtColor(_frame, cv2.COLOR_BGR2RGB))
 
     _cap.release()
 
     tracking_video = None
+
     if _frames:
+        # Save frames with rectanges to a temporary file so we can show it with marimo
         with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as _tmp:
             imageio.mimsave(_tmp.name, _frames, fps=30, format='FFMPEG', codec='libx264', macro_block_size=None)
             tracking_video = mo.video(_tmp.name)
