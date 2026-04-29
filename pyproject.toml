@@ -6,9 +6,11 @@ readme = "README.md"
 requires-python = ">= 3.14"
 dependencies = [
     "dlib>=20.0.1",
+    "imageio[ffmpeg]>=2.37.3",
+    "imutils>=0.5.4",
     "matplotlib>=3.7.5",
     "numpy>=1.24.4",
-    "opencv-python>=4.13.0.92",
+    "opencv-contrib-python>=4.13.0.92",
     "scikit-learn>=1.8.0",
 ]
 
