@@ -365,24 +365,37 @@ def _(
     _frames = []
 
     # Process each frame in the selected range
-    for _ in mo.status.progress_bar(range(int(_max_frames)), title="Tracking..."):
+    for i in mo.status.progress_bar(range(int(_max_frames)), title="Tracking..."):
         _success, _frame = _cap.read()
         if not _success:
             break
 
-        _success, _trk_bbox = _tracker.update(_frame)
+        if i == 0:
+            # First frame is the initialization frame: show manual ROI
+            _bx, _by, _btw, _bth = x, y, bw, bh
+            _color = (255, 0, 0)  # Blue for manual
+            _label = "Initial ROI (Manual)"
+            _show_box = True
+        else:
+            # Subsequent frames: show tracker result
+            _success_trk, _trk_bbox = _tracker.update(_frame)
+            if _success_trk:
+                (_bx, _by, _btw, _bth) = [int(_v) for _v in _trk_bbox]
+                _color = (0, 255, 0)  # Green for tracker
+                _label = f"Tracking ({tracker_select.value})"
+                _show_box = True
+            else:
+                _show_box = False
 
-        if _success:
-            # Draw the object rectange with label
-            (_bx, _by, _btw, _bth) = [int(_v) for _v in _trk_bbox]
-            cv2.rectangle(_frame, (_bx, _by), (_bx + _btw, _by + _bth), (0, 255, 0), 2)
+        if _show_box:
+            cv2.rectangle(_frame, (_bx, _by), (_bx + _btw, _by + _bth), _color, 2)
             cv2.putText(
                 _frame,
-                tracker_select.value,
+                _label,
                 (_bx, _by - 10),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.5,
-                (0, 255, 0),
+                _color,
                 2,
             )
         else:
