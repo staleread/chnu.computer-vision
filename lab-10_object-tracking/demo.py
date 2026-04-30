@@ -37,15 +37,12 @@ def _():
             pass
 
     get_profiles, set_profiles = mo.state(load_profiles())
-    get_active_profile, set_active_profile = mo.state(None)
-    get_config_override, set_config_override = mo.state({})
+    get_active_profile, set_active_profile = mo.state({"name": "Custom"})
     return (
         config_path,
         get_active_profile,
-        get_config_override,
         get_profiles,
         set_active_profile,
-        set_config_override,
         set_profiles,
     )
 
@@ -66,30 +63,26 @@ def _():
 
 
 @app.cell
-def _(
-    get_active_profile,
-    get_profiles,
-    set_active_profile,
-    set_config_override,
-):
-    def on_profile_select(v):
-        if v and v != "Custom":
-            set_active_profile(v)
-            set_config_override(get_profiles()[v])
+def _(get_active_profile, get_profiles, set_active_profile):
+    def on_profile_change(v):
+        if v == "Custom":
+            set_active_profile({"name": "Custom"})
         else:
-            set_active_profile(None)
+            _profile_data = get_profiles().get(v, {})
+            set_active_profile({**_profile_data, "name": v})
 
     _options = ["Custom"] + list(get_profiles().keys())
-    _current_val = get_active_profile() or "Custom"
+    _current_profile = get_active_profile()
+    _current_name = _current_profile.get("name", "Custom")
 
-    if _current_val not in _options:
-        _current_val = "Custom"
+    if _current_name not in _options:
+        _current_name = "Custom"
 
     profile_dropdown = mo.ui.dropdown(
         options=_options,
-        value=_current_val,
+        value=_current_name,
         label="Select Profile",
-        on_change=on_profile_select,
+        on_change=on_profile_change,
     )
 
     profile_label = mo.ui.text(label="Profile Label")
@@ -122,13 +115,14 @@ def _():
 
 
 @app.cell
-def _(get_config_override, set_active_profile):
+def _(get_active_profile, set_active_profile):
     # Get video file paths
     _video_files = [
         f"data/{file}" for file in os.listdir("data") if file.endswith((".mp4", ".gif"))
     ]
 
-    _default_video = get_config_override().get("video")
+    _active = get_active_profile()
+    _default_video = _active.get("video")
     if _default_video not in _video_files:
         _default_video = _video_files[0] if _video_files else None
 
@@ -136,7 +130,7 @@ def _(get_config_override, set_active_profile):
         options=_video_files,
         value=_default_video,
         label="Select Video",
-        on_change=lambda _: set_active_profile(None),
+        on_change=lambda v: set_active_profile({**get_active_profile(), "name": "Custom", "video": v}),
     )
 
     video_select
@@ -154,15 +148,16 @@ def _(video_select):
 
 
 @app.cell
-def _(get_config_override, set_active_profile, total_frames: int):
+def _(get_active_profile, set_active_profile, total_frames: int):
+    _active = get_active_profile()
     tracker_select = mo.ui.dropdown(
         options=["MIL", "TLD"],
-        value=get_config_override().get("tracker", "MIL"),
+        value=_active.get("tracker", "MIL"),
         label="Select Tracker",
-        on_change=lambda _: set_active_profile(None),
+        on_change=lambda v: set_active_profile({**get_active_profile(), "name": "Custom", "tracker": v}),
     )
 
-    _default_range = get_config_override().get(
+    _default_range = _active.get(
         "frame_range", [0, min(150, total_frames - 1)]
     )
     # Validate range
@@ -180,7 +175,7 @@ def _(get_config_override, set_active_profile, total_frames: int):
         value=_default_range,
         label="Frame Range",
         full_width=True,
-        on_change=lambda _: set_active_profile(None),
+        on_change=lambda v: set_active_profile({**get_active_profile(), "name": "Custom", "frame_range": v}),
     )
 
     mo.vstack([tracker_select, frame_range])
@@ -211,49 +206,55 @@ def _():
 
 
 @app.cell
-def _(first_frame, get_config_override, set_active_profile):
+def _(first_frame, get_active_profile, set_active_profile):
     h, w = first_frame.shape[:2]
-    _roi = get_config_override().get("roi", {})
+    _active = get_active_profile()
+    _roi = _active.get("roi", {})
 
-    def on_roi_change(_):
-        set_active_profile(None)
+    def _get_roi(key, default, hi, lo=0):
+        return max(lo, min(_roi.get(key, default), hi))
+
+    def sync_roi(new_parts):
+        _current = get_active_profile()
+        _new_roi = {**_current.get("roi", {}), **new_parts}
+        set_active_profile({**_current, "name": "Custom", "roi": _new_roi})
 
     # Sliders for ROI selection
     x_slider = mo.ui.slider(
         start=0,
         stop=w - 1,
         step=1,
-        value=_roi.get("x", w // 4),
+        value=_get_roi("x", w // 4, w - 1),
         label="X",
         full_width=True,
-        on_change=on_roi_change,
+        on_change=lambda v: sync_roi({"x": v}),
     )
     y_slider = mo.ui.slider(
         start=0,
         stop=h - 1,
         step=1,
-        value=_roi.get("y", h // 4),
+        value=_get_roi("y", h // 4, h - 1),
         label="Y",
         full_width=True,
-        on_change=on_roi_change,
+        on_change=lambda v: sync_roi({"y": v}),
     )
     w_slider = mo.ui.slider(
         start=1,
         stop=w,
         step=1,
-        value=_roi.get("w", w // 2),
+        value=_get_roi("w", w // 2, w, lo=1),
         label="Width",
         full_width=True,
-        on_change=on_roi_change,
+        on_change=lambda v: sync_roi({"w": v}),
     )
     h_slider = mo.ui.slider(
         start=1,
         stop=h,
         step=1,
-        value=_roi.get("h", h // 2),
+        value=_get_roi("h", h // 2, h, lo=1),
         label="Height",
         full_width=True,
-        on_change=on_roi_change,
+        on_change=lambda v: sync_roi({"h": v}),
     )
 
     mo.vstack([x_slider, y_slider, w_slider, h_slider])
@@ -287,7 +288,7 @@ def _(get_active_profile):
     # UI button for starting tracking
     run_button = mo.ui.run_button(label="Start Tracking")
     save_button = mo.ui.run_button(
-        label="Save Profile", disabled=(get_active_profile() is not None)
+        label="Save Profile", disabled=(get_active_profile().get("name") != "Custom")
     )
 
     mo.hstack([run_button, save_button])
@@ -330,7 +331,7 @@ def _(
             json.dump(_profiles, _f, indent=4)
 
         set_profiles(_profiles)
-        set_active_profile(_name)
+        set_active_profile({**_new_profile, "name": _name})
     return
 
 
