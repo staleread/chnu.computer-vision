@@ -13,6 +13,15 @@ with app.setup:
     import matplotlib.pyplot as plt
 
 
+@app.function
+def get_tracker(tracker_type: str):
+    if tracker_type == "MIL":
+        return cv2.TrackerMIL.create()
+    if tracker_type == "TLD":
+        return cv2.legacy.TrackerTLD.create()
+    return None
+
+
 @app.cell
 def _():
     # Profile management
@@ -37,13 +46,16 @@ def _():
             pass
 
     get_profiles, set_profiles = mo.state(load_profiles())
-    get_active_profile, set_active_profile = mo.state({"name": "Custom"})
+    get_active_profile, set_active_profile = mo.state({"name": "Custom", "rois": []})
+    get_roi_index, set_roi_index = mo.state(0)
     return (
         config_path,
         get_active_profile,
         get_profiles,
+        get_roi_index,
         set_active_profile,
         set_profiles,
+        set_roi_index,
     )
 
 
@@ -85,19 +97,8 @@ def _(get_active_profile, get_profiles, set_active_profile):
         on_change=on_profile_change,
     )
 
-    profile_label = mo.ui.text(label="Profile Label")
-
-    mo.hstack([profile_dropdown, profile_label], justify="start")
-    return (profile_label,)
-
-
-@app.function
-def get_tracker(tracker_type: str):
-    if tracker_type == "MIL":
-        return cv2.TrackerMIL.create()
-    if tracker_type == "TLD":
-        return cv2.legacy.TrackerTLD.create()
-    return None
+    profile_dropdown
+    return
 
 
 @app.cell(hide_code=True)
@@ -150,12 +151,6 @@ def _(video_select):
 @app.cell
 def _(get_active_profile, set_active_profile, total_frames: int):
     _active = get_active_profile()
-    tracker_select = mo.ui.dropdown(
-        options=["MIL", "TLD"],
-        value=_active.get("tracker", "MIL"),
-        label="Select Tracker",
-        on_change=lambda v: set_active_profile({**get_active_profile(), "name": "Custom", "tracker": v}),
-    )
 
     _stop = max(0, total_frames - 1)
     _default_range = _active.get("frame_range", [0, min(150, _stop)])
@@ -183,8 +178,8 @@ def _(get_active_profile, set_active_profile, total_frames: int):
         on_change=lambda v: set_active_profile({**get_active_profile(), "name": "Custom", "frame_range": v}),
     )
 
-    mo.vstack([tracker_select, frame_range])
-    return frame_range, tracker_select
+    frame_range
+    return (frame_range,)
 
 
 @app.cell
@@ -211,59 +206,101 @@ def _():
 
 
 @app.cell
-def _(first_frame, get_active_profile, set_active_profile):
+def _(
+    first_frame,
+    get_active_profile,
+    get_roi_index,
+    set_active_profile,
+    set_roi_index,
+):
     h, w = first_frame.shape[:2]
-    _active = get_active_profile()
-    _roi = _active.get("roi", {})
+    active = get_active_profile()
+    rois = active.get("rois", [])
 
-    def _get_roi(key, default, hi, lo=0):
-        return max(lo, min(_roi.get(key, default), hi))
+    # Ensure at least one ROI exists
+    if not rois:
+        rois = [{"x": w // 4, "y": h // 4, "w": w // 2, "h": h // 2}]
+
+    # Local index clamped to current list
+    idx = min(get_roi_index(), len(rois) - 1)
+    current_roi = rois[idx]
+
+    def _get_val(key, default, hi, lo=0):
+        return max(lo, min(current_roi.get(key, default), hi))
 
     def sync_roi(new_parts):
-        _current = get_active_profile()
-        _new_roi = {**_current.get("roi", {}), **new_parts}
-        set_active_profile({**_current, "name": "Custom", "roi": _new_roi})
+        current = get_active_profile()
+        current_rois = list(current.get("rois", rois))
+        # Important: use current index from state to avoid closure stale idx
+        _c_idx = min(get_roi_index(), len(current_rois) - 1)
+        current_rois[_c_idx] = {**current_rois[_c_idx], **new_parts}
+        set_active_profile({**current, "name": "Custom", "rois": current_rois})
+
+    def add_roi(_):
+        current = get_active_profile()
+        current_rois = list(current.get("rois", rois))
+        current_rois.append({"x": w // 4, "y": h // 4, "w": w // 2, "h": h // 2})
+        set_active_profile({**current, "name": "Custom", "rois": current_rois})
+        set_roi_index(len(current_rois) - 1)
+
+    def remove_roi(_):
+        current = get_active_profile()
+        current_rois = list(current.get("rois", rois))
+        if len(current_rois) > 1:
+            _c_idx = min(get_roi_index(), len(current_rois) - 1)
+            current_rois.pop(_c_idx)
+            set_active_profile({**current, "name": "Custom", "rois": current_rois})
+            set_roi_index(max(0, _c_idx - 1))
+
+    # UI for switching between ROIs
+    roi_selector = mo.ui.tabs(
+        {f"ROI {i+1}": mo.md("") for i in range(len(rois))},
+        value=f"ROI {idx+1}",
+        on_change=lambda v: set_roi_index(int(v.split()[-1]) - 1)
+    )
+
+    add_button = mo.ui.button(label="Add ROI", on_click=add_roi)
+    remove_button = mo.ui.button(label="Remove ROI", on_click=remove_roi, disabled=len(rois) <= 1)
+
+    profile_label = mo.ui.text(label="Profile Label", placeholder="e.g. wheels")
+    save_button = mo.ui.run_button(
+        label="Save Profile",
+        disabled=(active.get("name") != "Custom"),
+    )
 
     # Sliders for ROI selection
     x_slider = mo.ui.slider(
-        start=0,
-        stop=w - 1,
-        step=1,
-        value=_get_roi("x", w // 4, w - 1),
-        label="X",
-        full_width=True,
-        on_change=lambda v: sync_roi({"x": v}),
+        start=0, stop=w - 1, step=1, value=_get_val("x", w // 4, w - 1),
+        label="X", full_width=True, on_change=lambda v: sync_roi({"x": v}),
     )
     y_slider = mo.ui.slider(
-        start=0,
-        stop=h - 1,
-        step=1,
-        value=_get_roi("y", h // 4, h - 1),
-        label="Y",
-        full_width=True,
-        on_change=lambda v: sync_roi({"y": v}),
+        start=0, stop=h - 1, step=1, value=_get_val("y", h // 4, h - 1),
+        label="Y", full_width=True, on_change=lambda v: sync_roi({"y": v}),
     )
     w_slider = mo.ui.slider(
-        start=1,
-        stop=w,
-        step=1,
-        value=_get_roi("w", w // 2, w, lo=1),
-        label="Width",
-        full_width=True,
-        on_change=lambda v: sync_roi({"w": v}),
+        start=1, stop=w, step=1, value=_get_val("w", w // 2, w, lo=1),
+        label="Width", full_width=True, on_change=lambda v: sync_roi({"w": v}),
     )
     h_slider = mo.ui.slider(
-        start=1,
-        stop=h,
-        step=1,
-        value=_get_roi("h", h // 2, h, lo=1),
-        label="Height",
-        full_width=True,
-        on_change=lambda v: sync_roi({"h": v}),
+        start=1, stop=h, step=1, value=_get_val("h", h // 2, h, lo=1),
+        label="Height", full_width=True, on_change=lambda v: sync_roi({"h": v}),
     )
 
-    mo.vstack([x_slider, y_slider, w_slider, h_slider])
-    return h_slider, w_slider, x_slider, y_slider
+    roi_controls = mo.vstack([
+        mo.hstack([roi_selector, add_button, remove_button], justify="start"),
+        mo.hstack([profile_label, save_button], justify="start", align="end"),
+        x_slider, y_slider, w_slider, h_slider
+    ])
+    return (
+        h_slider,
+        profile_label,
+        roi_controls,
+        rois,
+        save_button,
+        w_slider,
+        x_slider,
+        y_slider,
+    )
 
 
 @app.cell
@@ -274,48 +311,59 @@ def _(h_slider, w_slider, x_slider, y_slider):
 
 
 @app.cell
-def _(bh, bw, first_frame, x, y):
-    # Preview ROI selection
-
-    _preview = first_frame.copy()
-
-    cv2.rectangle(_preview, (x, y), (x + bw, y + bh), (0, 255, 0), 2)
-
-    plt.figure(figsize=(8, 5))
-    plt.imshow(cv2.cvtColor(_preview, cv2.COLOR_BGR2RGB))
-    plt.axis("off")
-    plt.title("ROI Preview")
+def _(roi_controls):
+    roi_controls
     return
 
 
 @app.cell
-def _(get_active_profile):
-    # UI button for starting tracking
-    run_button = mo.ui.run_button(label="Start Tracking")
-    save_button = mo.ui.run_button(
-        label="Save Profile", disabled=(get_active_profile().get("name") != "Custom")
-    )
+def _(bh, bw, first_frame, rois, x, y):
+    # Preview ROI selection
+    _preview = first_frame.copy()
 
-    mo.hstack([run_button, save_button])
-    return run_button, save_button
+    # Draw all ROIs, highlight the current one in Red
+    for _r in rois:
+        _bx, _by, _bw, _bh = _r["x"], _r["y"], _r["w"], _r["h"]
+        _color = (0, 255, 0) # Green for others
+        # Check if this is the one currently being edited
+        if _bx == x and _by == y and _bw == bw and _bh == bh:
+            _color = (0, 0, 255) # Red for active
+        cv2.rectangle(_preview, (_bx, _by), (_bx + _bw, _by + _bh), _color, 2)
+
+    plt.figure(figsize=(8, 5))
+    plt.imshow(cv2.cvtColor(_preview, cv2.COLOR_BGR2RGB))
+    plt.axis("off")
+    plt.title("ROI Preview (Current ROI in Red)")
+    return
+
+
+@app.cell
+def _():
+    # UI button for starting tracking
+    tracker_select = mo.ui.dropdown(
+        options=["MIL", "TLD"],
+        value="MIL",
+        label="Select Tracker"
+    )
+    run_button = mo.ui.run_button(label="Start Tracking")
+
+    mo.hstack([tracker_select, run_button])
+    return run_button, tracker_select
 
 
 @app.cell
 def _(
-    bh,
-    bw,
     config_path,
     frame_range,
     get_profiles,
     profile_label,
+    rois,
     save_button,
     set_active_profile,
     set_profiles,
-    tracker_select,
     video_select,
-    x,
-    y,
 ):
+
     if save_button.value:
         # Construct profile name
         _base = os.path.basename(video_select.value).replace(".", "_")
@@ -324,9 +372,8 @@ def _(
 
         _new_profile = {
             "video": video_select.value,
-            "tracker": tracker_select.value,
             "frame_range": frame_range.value,
-            "roi": {"x": x, "y": y, "w": bw, "h": bh},
+            "rois": rois,
         }
 
         _profiles = get_profiles()
@@ -342,20 +389,20 @@ def _(
 
 @app.cell
 def _(
-    bh,
-    bw,
     first_frame,
     frame_range,
+    rois,
     run_button,
     tracker_select,
     video_select,
-    x,
-    y,
 ):
     mo.stop(not run_button.value)
 
-    _tracker = get_tracker(tracker_select.value)
-    _tracker.init(first_frame, (x, y, bw, bh))
+    _trackers = []
+    for _r in rois:
+        _t = get_tracker(tracker_select.value)
+        _t.init(first_frame, (_r["x"], _r["y"], _r["w"], _r["h"]))
+        _trackers.append(_t)
 
     _cap = cv2.VideoCapture(video_select.value)
     _start, _end = frame_range.value
@@ -370,44 +417,46 @@ def _(
         if not _success:
             break
 
-        if i == 0:
-            # First frame is the initialization frame: show manual ROI
-            _bx, _by, _btw, _bth = x, y, bw, bh
-            _color = (255, 0, 0)  # Blue for manual
-            _label = "Initial ROI (Manual)"
-            _show_box = True
-        else:
-            # Subsequent frames: show tracker result
-            _success_trk, _trk_bbox = _tracker.update(_frame)
-            if _success_trk:
-                (_bx, _by, _btw, _bth) = [int(_v) for _v in _trk_bbox]
-                _color = (0, 255, 0)  # Green for tracker
-                _label = f"Tracking ({tracker_select.value})"
+        for _idx, _tracker in enumerate(_trackers):
+            if i == 0:
+                # First frame is the initialization frame: show manual ROI
+                _r = rois[_idx]
+                _bx, _by, _btw, _bth = _r["x"], _r["y"], _r["w"], _r["h"]
+                _color = (255, 0, 0)  # Blue for manual
+                _label = f"Box {_idx+1} Initial"
                 _show_box = True
             else:
-                _show_box = False
+                # Subsequent frames: show tracker result
+                _success_trk, _trk_bbox = _tracker.update(_frame)
+                if _success_trk:
+                    (_bx, _by, _btw, _bth) = [int(_v) for _v in _trk_bbox]
+                    _color = (0, 255, 0)  # Green for tracker
+                    _label = f"Box {_idx+1} ({tracker_select.value})"
+                    _show_box = True
+                else:
+                    _show_box = False
 
-        if _show_box:
-            cv2.rectangle(_frame, (_bx, _by), (_bx + _btw, _by + _bth), _color, 2)
-            cv2.putText(
-                _frame,
-                _label,
-                (_bx, _by - 10),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.5,
-                _color,
-                2,
-            )
-        else:
-            cv2.putText(
-                _frame,
-                "Tracking failure",
-                (50, 50),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.75,
-                (0, 0, 255),
-                2,
-            )
+            if _show_box:
+                cv2.rectangle(_frame, (_bx, _by), (_bx + _btw, _by + _bth), _color, 2)
+                cv2.putText(
+                    _frame,
+                    _label,
+                    (_bx, _by - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.5,
+                    _color,
+                    2,
+                )
+            else:
+                cv2.putText(
+                    _frame,
+                    f"Box {_idx+1} failure",
+                    (50, 50 + (_idx * 30)),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.75,
+                    (0, 0, 255),
+                    2,
+                )
 
         # Ensure dimensions are even for FFMPEG (libx264 yuv420p)
         _h, _w = _frame.shape[:2]

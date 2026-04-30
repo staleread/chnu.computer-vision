@@ -6,26 +6,30 @@
             33,
             63
         ],
-        "roi": {
-            "x": 133,
-            "y": 95,
-            "w": 52,
-            "h": 54
-        }
+        "rois": [
+            {
+                "x": 133,
+                "y": 95,
+                "w": 52,
+                "h": 54
+            }
+        ]
     },
     "drifting_mp4_wheel": {
         "video": "data/drifting.mp4",
-        "tracker": "MIL",
+        "tracker": "TLD",
         "frame_range": [
             0,
-            20
+            24
         ],
-        "roi": {
-            "x": 409,
-            "y": 219,
-            "w": 49,
-            "h": 47
-        }
+        "rois": [
+            {
+                "x": 409,
+                "y": 219,
+                "w": 49,
+                "h": 47
+            }
+        ]
     },
     "fish_gif_body": {
         "video": "data/fish.gif",
@@ -34,11 +38,35 @@
             15,
             38
         ],
-        "roi": {
-            "x": 96,
-            "y": 91,
-            "w": 42,
-            "h": 100
-        }
+        "rois": [
+            {
+                "x": 96,
+                "y": 91,
+                "w": 42,
+                "h": 100
+            }
+        ]
+    },
+    "drifting_mp4_2-wheels": {
+        "video": "data/drifting.mp4",
+        "tracker": "TLD",
+        "frame_range": [
+            0,
+            24
+        ],
+        "rois": [
+            {
+                "x": 409,
+                "y": 219,
+                "w": 49,
+                "h": 47
+            },
+            {
+                "x": 227,
+                "y": 224,
+                "w": 46,
+                "h": 48
+            }
+        ]
     }
 }
