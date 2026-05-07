@@ -24,14 +24,14 @@
 *   **TLD Results:** A false positive is tracked for the front wheel when the real one disappears behind an obstacle. Then both trackers point to the rear wheel 
 *   **Analysis:** How do trackers react to geometric deformation of the object and temporary disappearance?
 
-## 5. Experiment #4: Waiter's Tip & Glass (data/glass.gif)
+## Experiment #4: Waiter's Tip & Glass (data/glass.gif)
 *   **Tracking Object:** Glass.
 *   **Scenario:** Static object position but dynamic background and significant lighting changes.
 *   **MIL Results:** Does track the object correctly no matter the lightning changes
 *   **TLD Results:** For a few frame the tracker tries his best at keeping the object followed but as the background changes significantly as well as the lightning, the tracker starts spamming false positive
 *   **Analysis:** Impact of background noise and illumination on tracking stability.
 
-## 6. Comparative Analysis
+## Tracker comparison
 *   **Observed differences in algorithm performance:**
     *   **MIL** demonstrated higher stability during partial occlusions and significant lighting changes. It tends to stay on the object even when the visual features are slightly distorted.
     *   **TLD** is more sensitive to background noise and illumination. However, it is better at identifying when the object has truly disappeared from the frame, whereas MIL often continues to "track" the background or an empty space (inertia).
