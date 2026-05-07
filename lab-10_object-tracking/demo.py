@@ -131,7 +131,7 @@ def _(get_active_profile, set_active_profile):
         options=_video_files,
         value=_default_video,
         label="Select Video",
-        on_change=lambda v: set_active_profile({**get_active_profile(), "name": "Custom", "video": v}),
+        on_change=lambda v: set_active_profile({"name": "Custom", "video": v, "rois": [], "frame_range": None}),
     )
 
     video_select
@@ -153,7 +153,8 @@ def _(get_active_profile, set_active_profile, total_frames: int):
     _active = get_active_profile()
 
     _stop = max(0, total_frames - 1)
-    _default_range = _active.get("frame_range", [0, min(150, _stop)])
+    _active_range = _active.get("frame_range")
+    _default_range = _active_range if _active_range is not None else [0, min(150, _stop)]
 
     # Validate and clamp range
     if (
@@ -222,32 +223,36 @@ def _(
         rois = [{"x": w // 4, "y": h // 4, "w": w // 2, "h": h // 2}]
 
     # Local index clamped to current list
-    idx = min(get_roi_index(), len(rois) - 1)
+    idx = max(0, min(get_roi_index(), len(rois) - 1))
     current_roi = rois[idx]
 
     def _get_val(key, default, hi, lo=0):
-        return max(lo, min(current_roi.get(key, default), hi))
+        return int(max(lo, min(current_roi.get(key, default), hi)))
 
     def sync_roi(new_parts):
         current = get_active_profile()
-        current_rois = list(current.get("rois", rois))
-        # Important: use current index from state to avoid closure stale idx
-        _c_idx = min(get_roi_index(), len(current_rois) - 1)
+        # Use current rois from state if they exist and are not empty
+        _state_rois = current.get("rois", [])
+        current_rois = list(_state_rois if _state_rois else rois)
+
+        _c_idx = max(0, min(get_roi_index(), len(current_rois) - 1))
         current_rois[_c_idx] = {**current_rois[_c_idx], **new_parts}
         set_active_profile({**current, "name": "Custom", "rois": current_rois})
 
     def add_roi(_):
         current = get_active_profile()
-        current_rois = list(current.get("rois", rois))
+        _state_rois = current.get("rois", [])
+        current_rois = list(_state_rois if _state_rois else rois)
         current_rois.append({"x": w // 4, "y": h // 4, "w": w // 2, "h": h // 2})
         set_active_profile({**current, "name": "Custom", "rois": current_rois})
         set_roi_index(len(current_rois) - 1)
 
     def remove_roi(_):
         current = get_active_profile()
-        current_rois = list(current.get("rois", rois))
+        _state_rois = current.get("rois", [])
+        current_rois = list(_state_rois if _state_rois else rois)
         if len(current_rois) > 1:
-            _c_idx = min(get_roi_index(), len(current_rois) - 1)
+            _c_idx = max(0, min(get_roi_index(), len(current_rois) - 1))
             current_rois.pop(_c_idx)
             set_active_profile({**current, "name": "Custom", "rois": current_rois})
             set_roi_index(max(0, _c_idx - 1))
@@ -293,6 +298,7 @@ def _(
     ])
     return (
         h_slider,
+        idx,
         profile_label,
         roi_controls,
         rois,
@@ -317,18 +323,23 @@ def _(roi_controls):
 
 
 @app.cell
-def _(bh, bw, first_frame, rois, x, y):
+def _(bh, bw, first_frame, idx, rois, x, y):
     # Preview ROI selection
+    # We use bh, bw, x, y to ensure this cell re-runs when sliders change,
+    # and 'idx' to correctly highlight the active box.
     _preview = first_frame.copy()
 
     # Draw all ROIs, highlight the current one in Red
-    for _r in rois:
-        _bx, _by, _bw, _bh = _r["x"], _r["y"], _r["w"], _r["h"]
+    for _i, _r in enumerate(rois):
+        _bx, _by, _btw, _bth = int(_r["x"]), int(_r["y"]), int(_r["w"]), int(_r["h"])
         _color = (0, 255, 0) # Green for others
-        # Check if this is the one currently being edited
-        if _bx == x and _by == y and _bw == bw and _bh == bh:
+        # Use idx to reliably highlight the active ROI
+        if _i == idx:
             _color = (0, 0, 255) # Red for active
-        cv2.rectangle(_preview, (_bx, _by), (_bx + _bw, _by + _bh), _color, 2)
+            # Use the direct slider values for the active box to ensure instant feedback
+            _bx, _by, _btw, _bth = int(x), int(y), int(bw), int(bh)
+
+        cv2.rectangle(_preview, (_bx, _by), (_bx + _btw, _by + _bth), _color, 2)
 
     plt.figure(figsize=(8, 5))
     plt.imshow(cv2.cvtColor(_preview, cv2.COLOR_BGR2RGB))
