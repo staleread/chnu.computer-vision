@@ -52,5 +52,20 @@
                 "h": 48
             }
         ]
+    },
+    "glass_gif": {
+        "video": "data/glass.gif",
+        "frame_range": [
+            0,
+            18
+        ],
+        "rois": [
+            {
+                "x": 278,
+                "y": 37,
+                "w": 63,
+                "h": 97
+            }
+        ]
     }
 }
