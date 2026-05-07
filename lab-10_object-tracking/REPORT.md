@@ -31,17 +31,26 @@
 *   **TLD Results:** For a few frame the tracker tries his best at keeping the object followed but as the background changes significantly as well as the lightning, the tracker starts spamming false positive
 *   **Analysis:** Impact of background noise and illumination on tracking stability.
 
-## 6. Comparative Analysis (Task 10.1)
-*   Observed differences in algorithm performance.
-*   Strengths and weaknesses of MIL vs. TLD based on the tests.
+## 6. Comparative Analysis
+*   **Observed differences in algorithm performance:**
+    *   **MIL** demonstrated higher stability during partial occlusions and significant lighting changes. It tends to stay on the object even when the visual features are slightly distorted.
+    *   **TLD** is more sensitive to background noise and illumination. However, it is better at identifying when the object has truly disappeared from the frame, whereas MIL often continues to "track" the background or an empty space (inertia).
+*   **Strengths and weaknesses:**
+    *   **MIL Strengths:** Robust to occlusion, handles lighting variations well, simple to initialize.
+    *   **MIL Weaknesses:** Prone to gradual drift, lacks a dedicated re-detection mechanism (it "forgets" the object if it moves too far from the last known position), doesn't explicitly report tracking failure.
+    *   **TLD Strengths:** Includes a detector that can re-localize the object after full occlusion, can report when the object is lost.
+    *   **TLD Weaknesses:** Highly susceptible to false positives in complex backgrounds, struggles with rapid scale changes and significant illumination shifts.
 
-## 7. Tracking Duration Study (Task 10.2)
-*   Analysis of the number of frames each tracker maintains the object without significant drift.
-*   Comparison between stable scenarios (constant scale) and dynamic scenarios.
+## Tracking Duration Study
+*   **Stable Scenarios (e.g., glass.gif with MIL):** In scenarios with static camera and consistent object scale, MIL maintained a perfect track for the entire duration (18+ frames) despite lighting changes.
+*   **Dynamic Scenarios (e.g., drifting.mp4):** 
+    *   In the "drifting" video, MIL tracked the wheel for approximately 15-20 frames before the car drifted behind an obstacle. It "guessed" the position for 3-5 frames and successfully recovered once the wheel reappeared.
+    *   TLD maintained the track for a shorter period (~10-12 frames) before being distracted by background features or false positives as the car's perspective changed.
+*   **Drift Analysis:** Significant drift was observed in TLD when the object's appearance changed due to rotation or scale, leading to tracking failures or jumps to similar-looking background patches. MIL showed less drift but tended to expand or contract the bounding box inaccurately over time.
 
-## 8. Multi-Object Tracking (Task 10.3)
-*   Demonstration of Multi-ROI tracking (e.g., simultaneous tracking of multiple wheels or both the pedestrian and the bus).
-*   Impact of the number of objects on processing performance.
-
-## 9. Conclusions
-General summary of algorithm robustness and recommendations for use-cases.
+## Multi-Object Tracking
+*   **Demonstration:** Using the "drifting.mp4" video, we initialized trackers on both the front and rear wheels of the car.
+*   **Observed Behavior:**
+    *   **MIL:** Both trackers maintained their respective wheels well until the drift maneuver began. When the front wheel was obscured, its tracker drifted into the car body (inertia).
+    *   **TLD:** TLD struggled with the similarity between the two wheels. When one wheel became obscured, its tracker occasionally jumped to the other wheel, identifying it as a match (false positive localization).
+*   **Performance Impact:** Tracking two objects roughly doubled the processing time per frame. Since the trackers run sequentially in the demo implementation, adding more ROIs directly impacts the real-time performance of the application.
