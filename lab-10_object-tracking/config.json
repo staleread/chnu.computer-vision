@@ -31,22 +31,6 @@
             }
         ]
     },
-    "fish_gif_body": {
-        "video": "data/fish.gif",
-        "tracker": "MIL",
-        "frame_range": [
-            15,
-            38
-        ],
-        "rois": [
-            {
-                "x": 96,
-                "y": 91,
-                "w": 42,
-                "h": 100
-            }
-        ]
-    },
     "drifting_mp4_2-wheels": {
         "video": "data/drifting.mp4",
         "tracker": "TLD",
