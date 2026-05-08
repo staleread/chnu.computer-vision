@@ -5,24 +5,59 @@
 *   **TLD (Tracking-Learning-Detection):** Brief principle (combination of a tracker, detector, and learning via P-N experts for long-term tracking).
 
 ## Experiment #1: Bus and Pedestrian (data/bus.gif)
-*   **Tracking Object:** Bus.
-*   **Scenario:** The bus slowly moves away from the camera (downscaling), while a pedestrian crosses between the bus and the camera (partial occlusion).
-*   **MIL Results:** The pedestrian walking does cause the tracked object rectangle to shift slightly but the tracker recovers quickly
-- **TLD Results:** The tracker doesn't follow the object correctly (with some shifts) and the occlusion caused by a pedestrian make it fail for some frames
-*   **Comparison:** MIL did better at resisting the occlusion
+* **Tracking Object:** Bus.
+* **Scenario:** The bus slowly moves away from the camera (downscaling), while a pedestrian crosses between the bus and the camera (partial occlusion).
+<img width="1190" height="767" alt="image" src="https://github.com/user-attachments/assets/3fd2f9ea-542f-495a-bbac-970ec885dca8" />
+
+**MIL Results:** The pedestrian walking does cause the tracked object rectangle to shift slightly but the tracker recovers quickly
+<img width="1183" height="766" alt="image" src="https://github.com/user-attachments/assets/eba1caaf-b5ad-4fc1-838f-64fd1b6adac8" />
+
+**TLD Results:** The tracker doesn't follow the object correctly (with some shifts) and the occlusion caused by a pedestrian make it fail for some frames
+<img width="1182" height="770" alt="image" src="https://github.com/user-attachments/assets/e80a4b7f-b4cf-4d4a-b04c-5e2657d3ea0e" />
+
+**Comparison:** MIL did better at resisting the occlusion
 
 ## Experiment #2: Drifting (data/drifting.mp4)
 *   **Tracking Object:** Single car wheel.
 *   **Scenario:** Change in perspective (side view -> drift/rear view), the wheel disappearing behind an obstacle for several frames.
-*   **MIL Results:** The tracked rectangle follows the object with good precision. When the object is behind the obstacle, the algorithm tries to "guess" the next position (kinda inertia) and doesn't report the absence. After a couple of frames after appearing again, the tracker makes a successful recovery. The perspective change is handled well.
-*   **TLD Results:** There's a slight shift of the tracked rectangle as the car (and its wheels) moves faster in the viewport. When the target hides behind the obstacle the tracker correctly states the object did so, but after some frames it starts tracking the false positives. When the object appears again it gets tracked immediately. The change in perspective leads to the tracker highlighting a false positive.
-*   **Analysis:** How do trackers react to geometric deformation of the object and temporary disappearance?
+<img width="1184" height="592" alt="image" src="https://github.com/user-attachments/assets/0964865d-c063-4151-b72e-8cd4574af5b7" />
+
+**MIL Results:** The tracked rectangle follows the object with good precision. When the object is behind the obstacle, the algorithm tries to "guess" the next position (kinda inertia) and doesn't report the absence.
+<img width="1092" height="542" alt="image" src="https://github.com/user-attachments/assets/7d084131-92e7-422d-9198-7f29271c1dab" />
+
+After a couple of frames after appearing again, the tracker makes a successful attempt of recovery
+<img width="695" height="326" alt="image" src="https://github.com/user-attachments/assets/b1c9f9b7-9b9f-46a6-a743-7ccc5909d53a" />
+
+The change in perspective is handled well.
+<img width="696" height="322" alt="image" src="https://github.com/user-attachments/assets/8aae51db-4cb9-41f7-9304-17b4a7256648" />
+
+**TLD Results:** There's a slight shift of the tracked rectangle as the car (and its wheels) moves faster in the viewport. When the target hides behind the obstacle the tracker correctly states the object did so. 
+
+<img width="672" height="325" alt="image" src="https://github.com/user-attachments/assets/d7325dd3-d2a9-4618-9827-25da6fbfad54" />
+
+When the object appears again it gets tracked immediately.
+<img width="668" height="321" alt="image" src="https://github.com/user-attachments/assets/84fd9853-07a1-4fd9-a215-d0ee55b2761e" />
+
+The change in perspective is handled well, without any false positives.
+<img width="690" height="320" alt="image" src="https://github.com/user-attachments/assets/d3f4394c-64aa-4a77-82d9-bc98ff76bc9d" />
 
 ## Experiment #3: Drifting (data/drifting.mp4)
 *   **Tracking Objects:** Two car wheels.
-*   **MIL Results:** After disappearing and appearing again the trackers don't follow the target object but the regions that might be guessed (feels like inertia)
+<img width="697" height="322" alt="image" src="https://github.com/user-attachments/assets/5aabb4d3-b808-4393-917f-d4ef992882ab" />
+
+**MIL Results:** After disappearing and appearing again the trackers don't follow the target object but the regions that might be guessed (feels like inertia)
+<img width="702" height="328" alt="image" src="https://github.com/user-attachments/assets/da9207d3-c300-4e78-967a-5934be9527e3" />
+<img width="697" height="325" alt="image" src="https://github.com/user-attachments/assets/04ee9ab9-9f49-492a-a7dd-e9fe22a24136" />
+<img width="703" height="328" alt="image" src="https://github.com/user-attachments/assets/df06fac0-64df-4afe-b37a-fede31f61136" />
+
 *   **TLD Results:** A false positive is tracked for the front wheel when the real one disappears behind an obstacle. Then both trackers point to the rear wheel 
-*   **Analysis:** How do trackers react to geometric deformation of the object and temporary disappearance?
+
+<img width="700" height="325" alt="image" src="https://github.com/user-attachments/assets/35c1bb68-abe5-46af-8226-6f5a0b14f0da" />
+<img width="672" height="314" alt="image" src="https://github.com/user-attachments/assets/b69c9a38-f63c-4656-8a12-cb22f9742549" />
+<img width="693" height="331" alt="image" src="https://github.com/user-attachments/assets/9b129e42-d8d8-4e4f-824a-4aec3617a668" />
+<img width="697" height="324" alt="image" src="https://github.com/user-attachments/assets/1725c84e-3870-4b59-81a7-b08903ce55d8" />
+<img width="690" height="334" alt="image" src="https://github.com/user-attachments/assets/edf47401-5ab9-4462-b3f7-7aaee9c2d5fb" />
+<img width="698" height="329" alt="image" src="https://github.com/user-attachments/assets/54df9cc7-4204-413c-9202-9dcc2260c392" />
 
 ## Experiment #4: Waiter's Tip & Glass (data/glass.gif)
 *   **Tracking Object:** Glass.
