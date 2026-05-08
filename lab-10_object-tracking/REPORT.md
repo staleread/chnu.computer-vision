@@ -82,9 +82,19 @@ The wheels in perspective are noticed but the rectangles are slightly too small
 ## Experiment #4: Waiter's Tip & Glass (data/glass.gif)
 *   **Tracking Object:** Glass.
 *   **Scenario:** Static object position but dynamic background and significant lighting changes.
-*   **MIL Results:** Does track the object correctly no matter the lightning changes
-*   **TLD Results:** For a few frame the tracker tries his best at keeping the object followed but as the background changes significantly as well as the lightning, the tracker starts spamming false positive
-*   **Analysis:** Impact of background noise and illumination on tracking stability.
+<img width="694" height="323" alt="image" src="https://github.com/user-attachments/assets/5f851426-6ec1-4467-9f40-1706d8e3a615" />
+
+
+**MIL Results:** Does track the object correctly no matter the lightning changes
+<img width="680" height="318" alt="image" src="https://github.com/user-attachments/assets/055a9030-a5f4-41f4-8038-5a2cf0905038" />
+<img width="697" height="325" alt="image" src="https://github.com/user-attachments/assets/9da01b66-a618-4a48-aabb-0334757f7268" />
+
+
+*   **TLD Results:** For a few frame the tracker tries his best at keeping the object followed (with slight rectagle shifts though).
+<img width="705" height="334" alt="image" src="https://github.com/user-attachments/assets/ebce7d76-3b38-4f6c-a87b-61681b46d6d9" />
+
+But as the background changes significantly as well as the lightning, the tracker starts spamming false positive
+<img width="681" height="332" alt="image" src="https://github.com/user-attachments/assets/1df2ab8a-2ca1-414a-bf7e-72d4f71b2f02" />
 
 ## Tracker comparison
 *   **Observed differences in algorithm performance:**
