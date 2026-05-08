@@ -1,9 +1,5 @@
 # CV Lab 10 - Object Tracking
 
-## Trackers Overview
-*   **MIL (Multiple Instance Learning):** Brief principle (use of positive and negative examples in "bags" to handle tracker drift).
-*   **TLD (Tracking-Learning-Detection):** Brief principle (combination of a tracker, detector, and learning via P-N experts for long-term tracking).
-
 ## Experiment #1: Bus and Pedestrian (data/bus.gif)
 * **Tracking Object:** Bus.
 * **Scenario:** The bus slowly moves away from the camera (downscaling), while a pedestrian crosses between the bus and the camera (partial occlusion).
