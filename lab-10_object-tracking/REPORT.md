@@ -45,10 +45,19 @@ The change in perspective is handled well, without any false positives.
 *   **Tracking Objects:** Two car wheels.
 <img width="697" height="322" alt="image" src="https://github.com/user-attachments/assets/5aabb4d3-b808-4393-917f-d4ef992882ab" />
 
-**MIL Results:** After disappearing and appearing again the trackers don't follow the target object but the regions that might be guessed (feels like inertia)
+**MIL Results:**
+
+When the first wheel disappears the second tracker doesn't jump to the remaining wheel but keep following the guessed location of the object
 <img width="702" height="328" alt="image" src="https://github.com/user-attachments/assets/da9207d3-c300-4e78-967a-5934be9527e3" />
-<img width="697" height="325" alt="image" src="https://github.com/user-attachments/assets/04ee9ab9-9f49-492a-a7dd-e9fe22a24136" />
-<img width="703" height="328" alt="image" src="https://github.com/user-attachments/assets/df06fac0-64df-4afe-b37a-fede31f61136" />
+
+The same thing with the rear wheel disappearing. The recovery for the front wheel is rather poor.
+<img width="689" height="326" alt="image" src="https://github.com/user-attachments/assets/4d8faeb8-a590-49b6-a1c0-281cc89b0ca9" />
+
+But the rear wheel tracker manages to recover well after the obtacle is passed
+<img width="697" height="330" alt="image" src="https://github.com/user-attachments/assets/ced87da9-fe64-4b3d-8ef0-6490ebc18dad" />
+
+The perspective change is handled OK
+<img width="690" height="323" alt="image" src="https://github.com/user-attachments/assets/c0be77ea-9f30-42b2-af16-352b59050ef5" />
 
 *   **TLD Results:** A false positive is tracked for the front wheel when the real one disappears behind an obstacle. Then both trackers point to the rear wheel 
 
