@@ -59,13 +59,24 @@ But the rear wheel tracker manages to recover well after the obtacle is passed
 The perspective change is handled OK
 <img width="690" height="323" alt="image" src="https://github.com/user-attachments/assets/c0be77ea-9f30-42b2-af16-352b59050ef5" />
 
-*   **TLD Results:** A false positive is tracked for the front wheel when the real one disappears behind an obstacle. Then both trackers point to the rear wheel 
+**TLD Results:** A false positive is tracked for the front wheel when the real one disappears behind an obstacle. Then both trackers point to the rear wheel 
 
+The tracking is good for some starting frames
 <img width="700" height="325" alt="image" src="https://github.com/user-attachments/assets/35c1bb68-abe5-46af-8226-6f5a0b14f0da" />
+
+But the front wheel tracker get crazy at some point and confuses the front wheel from the rear one
 <img width="672" height="314" alt="image" src="https://github.com/user-attachments/assets/b69c9a38-f63c-4656-8a12-cb22f9742549" />
+
+When the rear wheel disappears, both trackers state the target objects are not present (false for the front wheel)
 <img width="693" height="331" alt="image" src="https://github.com/user-attachments/assets/9b129e42-d8d8-4e4f-824a-4aec3617a668" />
+
+But then the front wheel tracker manages to recover
 <img width="697" height="324" alt="image" src="https://github.com/user-attachments/assets/1725c84e-3870-4b59-81a7-b08903ce55d8" />
+
+The rear wheel tracker recovers with ease
 <img width="690" height="334" alt="image" src="https://github.com/user-attachments/assets/edf47401-5ab9-4462-b3f7-7aaee9c2d5fb" />
+
+The wheels in perspective are noticed but the rectangles are slightly too small
 <img width="698" height="329" alt="image" src="https://github.com/user-attachments/assets/54df9cc7-4204-413c-9202-9dcc2260c392" />
 
 ## Experiment #4: Waiter's Tip & Glass (data/glass.gif)
