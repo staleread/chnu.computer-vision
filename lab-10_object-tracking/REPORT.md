@@ -98,24 +98,24 @@ But as the background changes significantly as well as the lightning, the tracke
 
 ## Tracker comparison
 *   **Observed differences in algorithm performance:**
-    *   **MIL** demonstrated higher stability during partial occlusions and significant lighting changes. It tends to stay on the object even when the visual features are slightly distorted.
-    *   **TLD** is more sensitive to background noise and illumination. However, it is better at identifying when the object has truly disappeared from the frame, whereas MIL often continues to "track" the background or an empty space (inertia).
+    *   **MIL** consistently handles occlusions by "guessing" the next position (inertia). While this prevents jumping to other objects, it can lead to poor recovery if the object's path changes significantly during the occlusion. It is remarkably stable under illumination shifts (Experiment 4).
+    *   **TLD** is more reactive; it correctly identifies object loss behind obstacles and can re-acquire the target immediately upon reappearance. However, it is prone to confusing similar-looking objects (e.g., front vs. rear wheel in Experiment 3) and can be distracted by background complexity under dynamic lighting.
 *   **Strengths and weaknesses:**
-    *   **MIL Strengths:** Robust to occlusion, handles lighting variations well, simple to initialize.
-    *   **MIL Weaknesses:** Prone to gradual drift, lacks a dedicated re-detection mechanism (it "forgets" the object if it moves too far from the last known position), doesn't explicitly report tracking failure.
-    *   **TLD Strengths:** Includes a detector that can re-localize the object after full occlusion, can report when the object is lost.
-    *   **TLD Weaknesses:** Highly susceptible to false positives in complex backgrounds, struggles with rapid scale changes and significant illumination shifts.
+    *   **MIL Strengths:** Robust to partial occlusion and lighting changes; maintains identity of multiple objects by sticking to local searches.
+    *   **MIL Weaknesses:** "Inertia" can lead to tracking the background during full occlusion; recovery after long occlusions is inconsistent.
+    *   **TLD Strengths:** Excellent at re-detecting objects after full disappearance; handles perspective changes well if the background is distinct.
+    *   **TLD Weaknesses:** Susceptible to "identity swaps" when multiple similar objects are present; bounding boxes can be slightly inaccurate in size during perspective shifts.
 
 ## Tracking Duration Study
-*   **Stable Scenarios (e.g., glass.gif with MIL):** In scenarios with static camera and consistent object scale, MIL maintained a perfect track for the entire duration (18+ frames) despite lighting changes.
+*   **Stable Scenarios (e.g., glass.gif):** MIL maintained a perfect track through significant lighting changes. TLD was stable initially but eventually failed due to background noise and illumination shifts.
 *   **Dynamic Scenarios (e.g., drifting.mp4):** 
-    *   In the "drifting" video, MIL tracked the wheel for approximately 15-20 frames before the car drifted behind an obstacle. It "guessed" the position for 3-5 frames and successfully recovered once the wheel reappeared.
-    *   TLD maintained the track for a shorter period (~10-12 frames) before being distracted by background features or false positives as the car's perspective changed.
-*   **Drift Analysis:** Significant drift was observed in TLD when the object's appearance changed due to rotation or scale, leading to tracking failures or jumps to similar-looking background patches. MIL showed less drift but tended to expand or contract the bounding box inaccurately over time.
+    *   **TLD** demonstrated high agility, re-acquiring the wheel immediately after it cleared the obstacle. It also successfully handled the side-to-rear perspective change without false positives.
+    *   **MIL** tracked successfully through the perspective change but showed poorer recovery for the front wheel compared to the rear wheel after occlusion.
+*   **Drift Analysis:** MIL's drift is characterized by "floating" during occlusions. TLD's drift is more "jumpy," manifesting as sudden shifts to similar objects or slightly undersized bounding boxes during rotation.
 
 ## Multi-Object Tracking
-*   **Demonstration:** Using the "drifting.mp4" video, we initialized trackers on both the front and rear wheels of the car.
+*   **Demonstration:** Simultaneous tracking of front and rear wheels in "drifting.mp4".
 *   **Observed Behavior:**
-    *   **MIL:** Both trackers maintained their respective wheels well until the drift maneuver began. When the front wheel was obscured, its tracker drifted into the car body (inertia).
-    *   **TLD:** TLD struggled with the similarity between the two wheels. When one wheel became obscured, its tracker occasionally jumped to the other wheel, identifying it as a match (false positive localization).
-*   **Performance Impact:** Tracking two objects roughly doubled the processing time per frame. Since the trackers run sequentially in the demo implementation, adding more ROIs directly impacts the real-time performance of the application.
+    *   **MIL:** Showed good independence; even when the front wheel was obscured, the tracker did not "jump" to the rear wheel, instead continuing its predicted path. Recovery was successful for the rear wheel but struggled for the front.
+    *   **TLD:** Suffered from identity confusion. The front wheel tracker incorrectly locked onto the rear wheel when the front one was obscured. Interestingly, TLD correctly reported "not present" for both targets when only the rear wheel was actually obscured (a false negative for the visible front wheel).
+*   **Performance Impact:** Processing time scales linearly with the number of ROIs. The sequential update of trackers in the current implementation makes it less suitable for high-speed tracking of many objects simultaneously.
